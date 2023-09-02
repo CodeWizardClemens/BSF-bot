@@ -3,7 +3,7 @@ from discord.ext import commands, tasks
 import subprocess
 import datetime
 
-class CommitDataCog(discord.Cog):
+class CommitDataCog(commands.Cog):
     """A discord cog that commits user data to the BSF-bot-data repository via Git"""
     timezone = datetime.timezone.utc
     commit_time = datetime.datetime(hour=20, minute=30, tzinfo=timezone)
