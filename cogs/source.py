@@ -36,7 +36,7 @@ class SourceCog(commands.Cog):
     async def search_files(self, input_text):
         relevant_file = None
         max_similarity = 0.0
-        file_dir = "./data/info_commands"
+        file_dir = "./BSF-bot-data/info_commands"
 
         # Preprocess the input text
         input_doc = self.nlp(input_text)
@@ -64,7 +64,7 @@ class SourceCog(commands.Cog):
         return relevant_file
 
     async def get_file_content(self, file_name):
-        file_path = os.path.join("./data/info_commands", file_name)
+        file_path = os.path.join("./BSF-bot-data/info_commands", file_name)
         try:
             with open(file_path, "r") as file:
                 content = file.read()

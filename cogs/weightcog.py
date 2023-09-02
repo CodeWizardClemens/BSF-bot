@@ -14,7 +14,7 @@ def has_bot_input_perms(ctx):
 class WeightCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.data_folder = "./data/weightcog/"
+        self.data_folder = "./BSF-bot-data/weightcog/"
 
     @commands.command()
     async def weight_goal(self, ctx, weight: float, date: str = None, user: discord.Member = None):

@@ -1,2 +1,4 @@
 .env
 data
+cogs/__pycache__/
+*.pyc
