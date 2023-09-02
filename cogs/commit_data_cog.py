@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 import subprocess
+import datetime
 
 class CommitDataCog(discord.Cog):
     """A discord cog that commits user data to the BSF-bot-data repository via Git"""
@@ -12,7 +13,7 @@ class CommitDataCog(discord.Cog):
         self.data_folder = "./BSF-bot-data/weightcog/"
 
     @tasks.loop(time=commit_time)
-    async def commit_data():
+    async def commit_data(self):
         datetime_now = datetime.now()
         current_date = datetime_now.strftime('%Y-%m-%d')
         current_time = datetime_now.strftime('%H-%M-%S')
