@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands, tasks
 import subprocess
 import datetime
+import yaml
 
 class CommitDataCog(commands.Cog):
     """A discord cog that commits user data to the BSF-bot-data repository via Git"""
@@ -10,12 +11,19 @@ class CommitDataCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.data_folder = "./BSF-bot-data/weightcog/"
+        self.config_loc = "./BOT_CONFIG.yaml"
+        config_yaml = self.get_config_yaml()
+        self.data_folder = config_yaml["data-folder"]
+
         try:
-            subprocess.run(["git", "status"], check=True, capture_output=True)
+            subprocess.run(["git", "--version"], check=True, capture_output=True)
         except subprocess.CalledProcessError as e:
             # Do we use logging instead?
             ctx.send("Git isn't installed. Please install Git on the host.")
+
+    @commands.Cog.listener()
+    async def start_commit_data(self):
+        await commit_data(self)
 
     @tasks.loop(time=commit_time)
     async def commit_data(self):
@@ -32,6 +40,11 @@ class CommitDataCog(commands.Cog):
 
         subprocess.run(["git", "commit", "-m", commit_msg])
         subprocess.run(["git", "push"])
+
+    def get_config_yaml(self):
+        with open(self.config_loc, 'r') as config_file:
+            config_yaml = yaml.safe_load(config_file)
+        return config_yaml
 
 async def setup(bot):
     await bot.add_cog(CommitDataCog(bot))
