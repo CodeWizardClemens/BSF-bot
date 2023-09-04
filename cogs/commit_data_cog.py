@@ -4,7 +4,7 @@ import subprocess
 import datetime
 import yaml
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Final
 
 class CommitDataCog(commands.Cog):
     """
@@ -13,29 +13,27 @@ class CommitDataCog(commands.Cog):
     It assumes that Git has already been setup on a host with access to the remote repository.
     """
 
-    # Specifies the time to commit data through a specified timezone
-    timezone: datetime.timezone = datetime.timezone.utc
-    commit_time: datetime.time = datetime.time(hour=20, minute=2, tzinfo=timezone)
+    # Specifies the time to commit data through specified timezone, hour and minute values
+    timezone: Final[datetime.timezone] = datetime.timezone.utc
+    commit_time: Final[datetime.time] = datetime.time(hour=20, minute=27, tzinfo=timezone)
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
-        self.config_loc: str = "./BOT_CONFIG.yaml"
-        config_yaml: Dict[str, Any] = self.get_config_yaml()
-        self.data_folder: str = config_yaml["data-folder"]
-
-        self.commit_data.start()
-        # Checks if git is installed
-        try:
-            subprocess.run(["git", "--version"], check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            # TODO: Do we use logging instead?
-            ctx.send("Git isn't installed. Please install Git on the host.")
+        self.config_path: Final[str] = "./BOT_CONFIG.yaml"
+        config: Dict[str, Any] = self.get_config()
+        self.data_folder: Final[str] = config["data-folder"]
+        
+        # Only commits data if Git is installed on the host
+        if (self.is_git_installed()): self.commit_data.start()
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         print("Module: CommitDataCog")
 
-    """Manually starts commit_data()"""
+    """
+    Manually starts commit_data()
+    example: .start_commit_data
+    """
     @commands.command()
     async def start_commit_data(self, ctx: commands.Context) -> None:
         await self.commit_data()
@@ -63,10 +61,22 @@ class CommitDataCog(commands.Cog):
         subprocess.run(["git", "push"])
 
     """Gets the config file contents that contain the data folder path"""
-    def get_config_yaml(self) -> Dict[str, Any]:
-        with open(self.config_loc, 'r') as config_file:
+    def get_config(self) -> Dict[str, Any]:
+        with open(self.config_path, 'r') as config_file:
             config_yaml: Dict[str, Any] = yaml.safe_load(config_file)
         return config_yaml
+
+    """
+    Checks if git is installed by checking the version
+    """
+    def is_git_installed(self) -> bool:
+        try:
+            subprocess.run(["git", "--version"], check=True, capture_output=True)
+        except subprocess.CalledProcessError as e:
+            # TODO: Do we use logging instead?
+            print("Git isn't installed. Please install Git on the host.")
+            return False
+        return True
 
 """Adds cog to the bot"""
 async def setup(bot: commands.Bot) -> None:
