@@ -17,7 +17,7 @@ class CommitDataCog(commands.Cog):
 
     # Specifies the time to commit data through specified timezone, hour and minute values
     TIMEZONE: Final[datetime.timezone] = datetime.timezone.utc
-    COMMIT_TIME: Final[datetime.time] = datetime.time(hour=13, minute=26, tzinfo=TIMEZONE)
+    COMMIT_TIME: Final[datetime.time] = datetime.time(hour=14, minute=8, tzinfo=TIMEZONE)
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
@@ -79,10 +79,16 @@ class CommitDataCog(commands.Cog):
     """
     def is_git_installed(self) -> bool:
         try:
-            subprocess.run(["git", "--version"], check=True, capture_output=True)
+            subprocess.run(["git", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         except subprocess.CalledProcessError as e:
             # TODO: Do we use logging instead?
-            print("Git isn't installed. Please install Git on the host.")
+            if e.returncode == 127:
+                print("ERROR: Git isn't installed. Please install Git on the host or ensure the PATH variable has been set properly.")
+            else:
+                print(f"ERROR: Unknown. Return code: {e.returncode}")
+                print(f"Standard output: {e.stdout}")
+                print(f"Standard error: {e.stderr}")
+
             return False
         return True
 
