@@ -1,27 +1,29 @@
+import datetime
+import os
+import subprocess
+from pathlib import Path
+from typing import Any, Dict, Final
+
 import discord
 from discord.ext import commands, tasks
-import subprocess
-import datetime
 import yaml
-import os
-from typing import Dict, Any, Final
 
 class CommitDataCog(commands.Cog):
     """
     Commits user data to the BSF-bot-data repository via Git. 
     
-    It assumes that Git has already been setup on a host with access to the remote repository.
+    It assumes that Git has already been setup on a host with access to the remote repository and that the setup won't change during runtime.
     """
 
     # Specifies the time to commit data through specified timezone, hour and minute values
-    timezone: Final[datetime.timezone] = datetime.timezone.utc
-    commit_time: Final[datetime.time] = datetime.time(hour=20, minute=27, tzinfo=timezone)
+    TIMEZONE: Final[datetime.timezone] = datetime.timezone.utc
+    COMMIT_TIME: Final[datetime.time] = datetime.time(hour=13, minute=26, tzinfo=TIMEZONE)
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
-        self.config_path: Final[str] = "./BOT_CONFIG.yaml"
-        config: Dict[str, Any] = self.get_config()
-        self.data_folder: Final[str] = config["data-folder"]
+        self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
+        self.config : Dict[str, Any] = self.get_config()
+        self.DATA_PATH: Final[str] = self.config["data-folder"]
         
         # Only commits data if Git is installed on the host
         if (self.is_git_installed()): self.commit_data.start()
@@ -39,9 +41,9 @@ class CommitDataCog(commands.Cog):
         await self.commit_data()
 
     """
-    Commits data via Git to the remote data repository
+    Commits data according to COMMIT_TIME where Git is used to push changes to the remote repository
     """
-    @tasks.loop(time=commit_time)
+    @tasks.loop(time=COMMIT_TIME)
     async def commit_data(self) -> None:
         datetime_now: datetime.datetime = datetime.datetime.now()
         current_date: str = datetime_now.strftime('%Y-%m-%d')
@@ -51,20 +53,26 @@ class CommitDataCog(commands.Cog):
 
         # Changes the current directory to the data folder if possible
         try:
-            os.chdir(self.data_folder)
+            os.chdir(self.DATA_PATH)
         except FileNotFoundError as e:  
-            print("Git could not find the data folder.")
+            print(f"Git could not find the data folder {self.DATA_PATH}.")
 
-        # Runs commands in console via subprocess
+        self.commit_to_git(commit_msg)
+
+    """
+    Gets the config file contents that contain the data folder path
+    """
+    def get_config(self) -> Dict[str, Any]:
+        with open(self.CONFIG_PATH, 'r') as config_file:
+            return yaml.safe_load(config_file)
+
+    """
+    Runs the console commands to add, commit and push to Git
+    """
+    def commit_to_git(self, commit_msg : str) -> None:
         subprocess.run(["git", "add", "."])
         subprocess.run(["git", "commit", "-m", commit_msg])
         subprocess.run(["git", "push"])
-
-    """Gets the config file contents that contain the data folder path"""
-    def get_config(self) -> Dict[str, Any]:
-        with open(self.config_path, 'r') as config_file:
-            config_yaml: Dict[str, Any] = yaml.safe_load(config_file)
-        return config_yaml
 
     """
     Checks if git is installed by checking the version
