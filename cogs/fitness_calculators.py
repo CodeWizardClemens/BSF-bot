@@ -1,6 +1,7 @@
 import re
 import discord
 from discord.ext import commands
+from typing import List
 
 class FitnessCalculatorsCog(commands.Cog):
     def __init__(self, bot : commands.Bot):
