@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta, date
 
-
 def has_bot_input_perms(ctx):
     role = discord.utils.get(ctx.guild.roles, name="bot-input")
     return role in ctx.author.roles
@@ -14,7 +13,9 @@ def has_bot_input_perms(ctx):
 class WeightCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.data_folder = "./BSF-bot-data/weightcog/"
+        self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
+        self.config : Dict[str, Any] = self.get_config()
+        self.weight_cog_path : str = self.config["weight-cog-path"]
 
     @commands.command()
     async def weight_goal(self, ctx, weight: float, date: str = None, user: discord.Member = None):
@@ -49,7 +50,7 @@ class WeightCog(commands.Cog):
         if not date:
             date = str(ctx.message.created_at.date())
     
-        file_path = os.path.join(self.data_folder, f"{user_id}_goal_weight.csv")
+        file_path = os.path.join(self.weight_cog_path, f"{user_id}_goal_weight.csv")
     
         # Read existing entries
         entries = []
@@ -107,7 +108,7 @@ class WeightCog(commands.Cog):
         if not date:
             date = str(ctx.message.created_at.date())
     
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
+        file_path = os.path.join(self.weight_cog_path, f"{user_id}.csv")
     
         # Read existing entries
         entries = []
@@ -192,7 +193,7 @@ class WeightCog(commands.Cog):
     
         user = user or ctx.author
         user_id = str(user.id)
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
+        file_path = os.path.join(self.weight_cog_path, f"{user_id}.csv")
     
         if not os.path.exists(file_path):
             await ctx.send("No weight data found for this user.")
@@ -267,7 +268,7 @@ class WeightCog(commands.Cog):
             plt.gca().tick_params(axis='y', colors='white')
             plt.tight_layout()
     
-        plot_path = os.path.join(self.data_folder, f"{user_id}_plot.png")
+        plot_path = os.path.join(self.weight_cog_path, f"{user_id}_plot.png")
         plt.savefig(plot_path, transparent=True)
         plt.close()
     
@@ -301,8 +302,8 @@ class WeightCog(commands.Cog):
 
         user = user or ctx.author
         user_id = str(user.id)
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
-        temp_file_path = os.path.join(self.data_folder, f"{user_id}_temp.csv")
+        file_path = os.path.join(self.weight_cog_path, f"{user_id}.csv")
+        temp_file_path = os.path.join(self.weight_cog_path, f"{user_id}_temp.csv")
 
         if not os.path.exists(file_path):
             await ctx.send("No weight data found for this user.")
@@ -348,7 +349,7 @@ class WeightCog(commands.Cog):
     
         user = user or ctx.author
         user_id = str(user.id)
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
+        file_path = os.path.join(self.weight_cog_path, f"{user_id}.csv")
     
         if not os.path.exists(file_path):
             await ctx.send("No weight data found for this user.")
