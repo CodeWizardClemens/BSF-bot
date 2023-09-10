@@ -9,7 +9,7 @@ class InfoCommands(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.save_directory = "./BSF-bog-data/info_commands/"
+        self.save_directory = "./BSF-bot-data/info_commands/"
         os.makedirs(self.save_directory, exist_ok=True)
 
     @commands.Cog.listener()
