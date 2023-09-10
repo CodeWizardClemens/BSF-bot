@@ -144,7 +144,7 @@ def calculate_bmr(bodyweight, height, age, gender):
         return round( (13.397 * bodyweight) + (4.799 * height) - (5.677 * age) +  88.362)
     return round( (9.247 * bodyweight) + (3.098 * height) - (4.330 * age) + 447.593 )
 
-class Mealplan(commands.Cog):
+class MealplanCog(commands.Cog):
     
     def __init__(self, client):    
         self.client = client
@@ -426,7 +426,7 @@ class Mealplan(commands.Cog):
                 await ctx.send("Please give a valid responce between 1 and 5")
 
 async def setup(client):
-    await client.add_cog(Mealplan(client))
+    await client.add_cog(MealplanCog(client))
 
 if __name__ == "__main__":
     breakpoint()
