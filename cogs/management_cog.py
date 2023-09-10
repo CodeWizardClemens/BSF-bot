@@ -6,7 +6,6 @@ def has_bot_input_perms(ctx):
     return role in ctx.author.roles
 
 class ManagementCog(commands.Cog):
-
     def __init__(self, client):    
         self.client = client
 

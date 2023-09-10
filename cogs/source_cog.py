@@ -17,6 +17,7 @@ class SourceCog(commands.Cog):
         self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
         self.config : Dict[str, Any] = self.get_config()
         self.info_commands_path : str = self.config["info-commands-path"]
+        self.KEY_PHRASE : Final[str] = 'source that'
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -31,8 +32,7 @@ class SourceCog(commands.Cog):
             return
 
         lowercase_content = message.content.lower()
-
-        if 'source that' in lowercase_content:
+        if self.KEY_PHRASE in lowercase_content:
             replied_message = message.reference.resolved if message.reference else None
             if replied_message:
                 relevant_file = await self.search_files(replied_message.content)
@@ -46,38 +46,38 @@ class SourceCog(commands.Cog):
         """
         Searches through all of the info command files to determine the most relevant file via the max similarity score
         """
-        relevant_file = None
+        relevant_info_file = None
         max_similarity = 0.0
 
         # Preprocess the input text
-        input_doc = self.nlp(input_text)
+        preprocessed_input_doc = self.nlp(input_text)
 
         # Iterate through each file in the directory
         saved_files : List[str] = os.listdir(self.info_commands_path)
         txt_files : List[str] = sorted([file[:-4] for file in saved_files if file.endswith(".txt")])
-        for file_name in txt_files:
-            file_path = os.path.join(self.info_commands_path, file_name)
+        for info_file_name in txt_files:
+            info_file_path = os.path.join(self.info_commands_path, info_file_name)
 
             # Read the contents of the file
-            with open(file_path, "r") as file:
-                content = file.read()
+            with open(info_file_path, "r") as info_file:
+                content = info_file.read()
 
                 # Preprocess the file content
                 content_doc = self.nlp(content)
 
                 # Calculate the similarity between input text and file content
-                similarity = input_doc.similarity(content_doc)
+                similarity = preprocessed_input_doc.similarity(content_doc)
 
                 # Update the most relevant file if similarity is higher
                 if similarity > max_similarity:
                     max_similarity = similarity
-                    relevant_file = file_name
+                    relevant_info_file = info_file_name
 
-        return relevant_file
+        return relevant_info_file
 
     # TODO: Get rid of useless function?
-    async def get_file_content(self, file_name):
-        file_path = os.path.join(self.info_commands_path, file_name)
+    async def get_file_content(self, file_name : str):
+        file_path : str = os.path.join(self.info_commands_path, file_name)
         try:
             with open(file_path, "r") as file:
                 content = file.read()

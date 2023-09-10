@@ -285,6 +285,7 @@ class WeightCog(commands.Cog):
             return
 
         moving_averages : List[float] = []
+        # Calculates the moving averages based on the selected moving average period
         for i in range(len(weights) - moving_avg_period + 1):
             avg = np.mean(weights[i:i + moving_avg_period])
             moving_averages.append(avg)
@@ -297,12 +298,6 @@ class WeightCog(commands.Cog):
         plot_path : str = os.path.join(self.weight_cog_path, f"{user_id}_plot.png")
         plt.savefig(plot_path, transparent=True)
         plt.close()
-    
-        # Send the plot as an embedded image
-        with open(plot_path, "rb") as plot_file:
-            plot_data = plot_file.read()
-        plot_embed = discord.Embed(title=f"Weight Record for {user.display_name}")
-        plot_embed.set_image(url="attachment://plot.png")
 
         await ctx.send(file=discord.File(plot_path, "plot.png"))
 

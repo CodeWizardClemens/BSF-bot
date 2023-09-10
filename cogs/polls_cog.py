@@ -16,7 +16,7 @@ class PollsCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
-        print(message.channel.id)
+        # Creates poll based off thumbs up/down emojis
         if(message.channel.id == self.polls_channel_id):
             await message.add_reaction(self.thumbs_up_emoji)
             await message.add_reaction(self.thumbs_down_emoji)
