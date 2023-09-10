@@ -2,6 +2,9 @@ import discord
 from discord.ext import commands
 import os
 import spacy
+from pathlib import Path
+from typing import Dict, Final, List, Any
+import yaml
 
 class SourceCog(commands.Cog):
     """
@@ -81,6 +84,13 @@ class SourceCog(commands.Cog):
                 return content
         except FileNotFoundError:
             return None
+
+    """
+    Gets the config file contents that contain the data folder path
+    """
+    def get_config(self) -> Dict[str, Any]:
+        with open(self.CONFIG_PATH, 'r') as config_file:
+            return yaml.safe_load(config_file)
 
 async def setup(bot: commands.Bot) -> None:
     """

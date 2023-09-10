@@ -1,4 +1,4 @@
 "data-folder": "BSF-bot-data"
 "save-directory-path": "./BSF-bog-data/info_commands/"
 "info-commands-path": "./BSF-bog-data/info_commands/"
-"weight-cog-path": ""./BSF-bot-data/weightcog/""
+"weight-cog-path": "./BSF-bot-data/weightcog/"
