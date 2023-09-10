@@ -1,4 +1,10 @@
-steps:
-  - uses: actions/checkout@v2
-  - uses: excitedleigh/setup-nox@v2.0.0
-  - run: nox --session lint
+name: BSF bot
+run-name: ${{ github.actor }} has a new change 🚀
+on: [push]
+jobs:
+  BSF-bot:
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v2
+    - uses: excitedleigh/setup-nox@v2.0.0
+    - run: nox --session lint
