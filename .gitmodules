@@ -1,3 +1,4 @@
 [submodule "BSF-bot-data"]
 	path = BSF-bot-data
 	url = https://github.com/CodeWizardClemens/BSF-bot-data
+	branch = master
