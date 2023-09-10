@@ -30,4 +30,4 @@ class FunnyReactionsCog(commands.Cog):
                 await message.add_reaction(self.eddierightarm)
 
 async def setup(bot) -> None:
-    await bot.add_cog(FunnyReactions(bot))
+    await bot.add_cog(FunnyReactionsCog(bot))
