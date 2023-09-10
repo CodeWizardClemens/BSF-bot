@@ -5,8 +5,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta, date
-from typing import Dict, List, Final
+from typing import Dict, List, Final, Any
 from pathlib import Path
+import yaml
 
 def has_bot_input_perms(ctx):
     role = discord.utils.get(ctx.guild.roles, name="bot-input")
@@ -25,7 +26,7 @@ class WeightCog(commands.Cog):
         }
 
     @commands.command()
-    async def weight_goal(self, ctx : commands.Context, weight: float, date: str = None, user: discord.Member) -> None:
+    async def weight_goal(self, ctx : commands.Context, weight: float, user: discord.Member, date: str = None) -> None:
         """
         Records a weight goal for a user.
 
@@ -177,7 +178,7 @@ class WeightCog(commands.Cog):
 
         return user_weight_data
 
-    def create_weight_plot(moving_averages = None, moving_averages_dates = None, dates, weights) -> None:
+    def create_weight_plot(dates, weights, moving_averages = None, moving_averages_dates = None) -> None:
         has_moving_averages = moving_averages != None and moving_averages_dates != None
 
         plt.figure(figsize=(10, 6))
@@ -206,7 +207,6 @@ class WeightCog(commands.Cog):
         Removes the weight record for a user on a specific date
         """
         removed = False
-        # TODO: Put this code into a WeightRepository
         with open(user_weights_path, "r") as input_file, open(temp_user_weights_path, "w", newline="") as output_file:
             csv_reader : csv.reader = csv.reader(input_file)
             csv_writer : csv.writer = csv.writer(output_file)
@@ -219,6 +219,13 @@ class WeightCog(commands.Cog):
 
         os.replace(temp_user_weights_path, user_weights_path)
         return removed
+
+    """
+    Gets the config file contents that contain the data folder path
+    """
+    def get_config(self) -> Dict[str, Any]:
+        with open(self.CONFIG_PATH, 'r') as config_file:
+            return yaml.safe_load(config_file)
 
     @commands.command()
     async def stats(
@@ -285,7 +292,7 @@ class WeightCog(commands.Cog):
         # Adjust dates to match the moving average data length
         moving_avg_dates : List[date] = dates[moving_avg_period - 1:]
 
-        self.create_weight_plot(moving_averages, moving_avg_dates, dates, weights)
+        self.create_weight_plot(dates, weights, moving_averages, moving_avg_dates)
     
         plot_path : str = os.path.join(self.weight_cog_path, f"{user_id}_plot.png")
         plt.savefig(plot_path, transparent=True)
