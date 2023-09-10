@@ -106,4 +106,4 @@ class FitnessCalculatorsCog(commands.Cog):
         await message.channel.send(response)
 
 async def setup(bot : commands.Bot) -> None:
-    await bot.add_cog(FitnessCalculators(bot))
+    await bot.add_cog(FitnessCalculatorsCog(bot))
