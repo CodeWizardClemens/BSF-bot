@@ -1,22 +1,31 @@
 import re
 import discord
 from discord.ext import commands
-from typing import List
+from typing import List, Final, Dict
 
 class FitnessCalculatorsCog(commands.Cog):
     def __init__(self, bot : commands.Bot):
         self.bot : commands.Bot = bot
-        self.activity_keywords : List[str] = ['cutting', 'bulking', 'maintaining']
-        self.gender_keywords : List[str] = ['male', 'female', 'gal', 'guy']
+        ACTIVITY_KEYWORDS : Final[List[str]] = ['cutting', 'bulking', 'maintaining']
+        GENDER_KEYWORDS : Final[List[str]] = ['male', 'female', 'gal', 'guy']
         
-        # TODO: Can we reuse this conversion logic?
-        # Define regular expressions for each data element
-        self.height_regex: re.Pattern = re.compile(r'(\d+(\.\d+)?)\s*cm', re.IGNORECASE)
-        self.weight_regex: re.Pattern = re.compile(r'(\d+(\.\d+)?)\s*kg', re.IGNORECASE)
-        self.bf_regex: re.Pattern = re.compile(r'(\d+(\.\d+)?)\s*bf', re.IGNORECASE)
-        self.gender_regex: re.Pattern = re.compile('|'.join(self.gender_keywords), re.IGNORECASE)
-        self.age_regex: re.Pattern = re.compile(r'(\d+)\s*(?:years?|yo)', re.IGNORECASE)
-        self.activity_regex: re.Pattern = re.compile('|'.join(self.activity_keywords), re.IGNORECASE)
+        # TODO: Issue-10 Extract conversion logic to a library
+        # Mapping that defines regular expressions to extract the metrics
+        self.METRIC_MAPPING : Dict[str, re.Pattern] = {
+            "height": re.compile(r'(\d+(\.\d+)?)\s*cm', re.IGNORECASE),
+            "weight": re.compile(r'(\d+(\.\d+)?)\s*kg', re.IGNORECASE),
+            "bf": re.compile(r'(\d+(\.\d+)?)\s*bf', re.IGNORECASE),
+            "gender": re.compile('|'.join(GENDER_KEYWORDS), re.IGNORECASE),
+            "age": re.compile(r'(\d+)\s*(?:years?|yo)', re.IGNORECASE),
+            "activity": re.compile('|'.join(ACTIVITY_KEYWORDS), re.IGNORECASE)
+        }
+        # This stores potentially repeatable data that doesn't need unique calculations
+        self.REPEATING_GROUPS = {"weight", "bodyfat", "age"}
+        self.STAT_PIPE_LINE = [
+            self.extract_bmi,
+            self.extract_ffmi,
+            self.extract_tdee
+        ]
 
     @commands.command()
     async def calculators(self, ctx : commands.Context) -> None:
@@ -31,77 +40,91 @@ class FitnessCalculatorsCog(commands.Cog):
                         "```Height, weight, bodyfat, gender, age, activity level```"
                         ))
 
+    def extract_metrics(self, message_content : str):
+        """
+        Extracts fitness data required to calculate metrics.
+        """
+        metric_data : Dict[str, Any] = {
+            "height": None,
+            "weight": None,
+            "bodyfat": None, 
+            "gender": None, 
+            "age": None, 
+            "activity": None
+        }
+        content_lowercase = message_content.lowered()
+        for metric, regex in self.METRIC_MAPPING.items():
+            metric_match = regex.search(content_lowercase)
+            if match:
+                if metric == "height":
+                    height_in_cm = float(match.group(1)) / 100
+                    metric_data[metric] = height_in_cm
+                elif metric in self.REPEATING_GROUPS:
+                    metric_data[metric] = float(match.group(1))
+                else:
+                    metric_data[metric] = float(match.group())
 
-    def extract_data(self, message_content : str):
-        height, weight, bodyfat, gender, age, activity = None, None, None, None, None, None
+        return metric_data
 
-        # Extract data using regular expressions
-        if height_match := height_regex.search(message_content):
-            height = float(height_match.group(1)) / 100  # Convert cm to meters
+    """
+    Extracts BMI with the assumption that `statistics` only consists of filled variables
+    """
+    def extract_bmi(self, metric_data, statistics):
+        can_get_bmi : bool = {"height", "weight"} in statistics
+        if can_get_bmi:
+            statistics["bmi"] = filled_variables["weight"] / (filled_variables["height"] ** 2)
+        
+        return statistics
 
-        if weight_match := weight_regex.search(message_content):
-            weight = float(weight_match.group(1))
+    """
+    Extracts FFMI with the assumption that `statistics` only consists of filled variables
+    """
+    def extract_ffmi(self, metric_data, statistics):
+        can_get_ffmi : bool = {"height", "weight", "bodyfat"} in statistics
+        if can_get_ffmi:
+            total_body_fat : float = weight * (bodyfat / 100)
+            lean_weight : float = weight - total_body_fat
+            statistics["ffmi"] = round((lean_weight / ((height /100) ** 2) + 6.1 * (1.8 - height / 100) ) / 10000,1)
 
-        if bf_match := bf_regex.search(message_content):
-            bodyfat = float(bf_match.group(1))
+        return statistics
 
-        message_content_lowered : str = message_content.lower()
-        if gender_match := gender_regex.search(message_content_lowered):
-            gender = gender_match.group()
+    """
+    Extracts TDEE with the assumption that `statistics` only consists of filled variables
+    """
+    def extract_tdee(self, metric_data, statistics):
+        can_get_tdee : bool = {"height", "weight", "gender", "activity"} in statistics
+        if can_get_tdee:
+            initial_tdee = 10 * weight + 6.25 * height - 5 * age
+            activity_lowercase = activity.lower()
+            statistics["tdee"] = initial_tdee
+            if activity_lowercase == 'cutting':
+                statistics["tdee"] = initial_tdee - 161
+            elif activity_lowercase == 'bulking':
+                statistics["tdee"] = initial_tdee + 5
+        
+        return statistics
 
-        if age_match := age_regex.search(message_content.lower()):
-            age = int(age_match.group(1))
-
-        if activity_match := activity_regex.search(message_content_lowered):
-            activity = activity_match.group()
-
-        return height, weight, bodyfat, gender, age, activity
-
+    # TODO: Issue-10 Put statistic extraction logic into the library
     @commands.Cog.listener()
     async def on_message(self, message) -> None:
-        # Check if the message is from a bot or not in a direct message
-        #if message.author.bot or not message.guild:
-        #    return
-
-        # Extract data from the message
-        height, weight, bodyfat, gender, age, activity = self.extract_data(message.content)
+        metric_data = self.extract_metrics(message.content)
 
         # Check if two or more variables are filled
-        filled_variables = [var for var in [height, weight, bodyfat, gender, age, activity] if var is not None]
-        if len(filled_variables < 2):
+        filled_metrics = [var for metric_name, value in metric_data.items() if value is not None]
+        if len(filled_metrics < 2):
             return
 
         # Calculate statistics
-        bmi = None
-        ffmi = None
-        tdee = None
-
-        if height and weight:
-            bmi = weight / (height ** 2)
-
-        if weight and bodyfat and height:
-            total_body_fat = weight * (bodyfat / 100)
-            lean_weight = weight - total_body_fat
-            ffmi = round((lean_weight / ((height /100) ** 2) + 6.1 * (1.8 - height / 100) ) / 10000,1)
-
-        if height and weight and gender and activity:
-            initial_tdee = 10 * weight + 6.25 * height - 5 * age
-            if activity.lower() == 'cutting':
-                tdee = initial_tdee - 161
-            elif activity.lower() == 'bulking':
-                tdee = initial_tdee + 5
-            elif activity.lower() == 'maintaining':
-                tdee = initial_tdee
-
-        # Create a response message with the extracted data and calculated statistics
-        #response = f"Height (cm): {height * 100}, Weight (kg): {weight}, Bodyfat (%): {bodyfat}, Gender: {gender}, Age: {age}, Activity: {activity}\n"
+        statistics = {"bmi": None, "ffmi": None, "tdee": None}
         response : str = ""
-        if bmi is not None:
-            response += f"BMI: {bmi:.2f}\n"
-        if ffmi is not None:
-            response += f"FFMI: {ffmi:.2f}\n"
-        if tdee is not None:
-            response += f"TDEE: {tdee:.2f}\n"
+
+        for stat_func in self.STAT_PIPELINE:
+            statistics = stat_func(metric_data, statistics)
+
+        # Create a response message with the calculated statistics
+        response : str = ""
+        for stat_name, stat_val in statistics.items():
+            response += f"{stat_name}: {stat_val:.2f}\n"
 
         await message.channel.send(response)
 
