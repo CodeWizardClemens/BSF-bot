@@ -155,7 +155,7 @@ class MealplanCog(commands.Cog):
 
     @commands.command(brief='Create a meal plan')
     async def mealplan(self, ctx):
-        await ctx.send("__**Diclamer/Introduction**__\n"
+        await ctx.send("__**Disclaimer/Introduction**__\n"
                        "Hi! I will help you give some personallised nutrition recommendations "
                        "based on some questions I'm going to ask you. Be mindful that I'm just "
                        "a tool and not a certified proffesional. My recommendations are oversimplified "
@@ -220,7 +220,7 @@ class MealplanCog(commands.Cog):
                    f"If you lose about 1kg per month up the carbs to {self.macros['carbs']+50}. ")
         elif self.goal == "Bulk":
             return ("You will need to track your weight to make sure you are gaining "
-                   "About 1kg per month. if this is not the case. Bump up the carbs to about "
+                   "About 1kg per month. If this is not the case. Bump up the carbs to about "
                    f"{self.macros['carbs']+50} to {self.macros['carbs']+75} grams.")
         elif self.goal == "Cut":
             return ("You will need to track you weight to make sure you are lowing weight on average "
