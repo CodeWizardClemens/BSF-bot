@@ -1,4 +1,7 @@
+# Base directory for the BSF-bot-data submodule
 "data-folder": "BSF-bot-data"
-"save-directory-path": "./BSF-bog-data/info_commands/"
+# Directory for the info_commands files
 "info-commands-path": "./BSF-bog-data/info_commands/"
-"weight-cog-path": "./BSF-bot-data/weightcog/"
+# Directory for storing user weight data
+# weight_cog.py handles these data operations
+"weight-cog-data-path": "./BSF-bot-data/weightcog/"

@@ -18,7 +18,7 @@ class WeightCog(commands.Cog):
         self.bot = bot
         self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
         self.config : Dict[str, Any] = self.get_config()
-        self.weight_cog_path : str = self.config["weight-cog-path"]
+        self.weight_cog_data_path : str = self.config["weight-cog-data-path"]
         self.MOVING_AVG_PERIODS : Final[Dict[str, int]] = {
             "weekly_avg": 7,
             "monthly_avg": 30,
@@ -58,7 +58,7 @@ class WeightCog(commands.Cog):
         if not date:
             date : str = str(ctx.message.created_at.date())
     
-        user_weight_path : str = os.path.join(self.weight_cog_path, f"{user_id}_goal_weight.csv")
+        user_weight_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}_goal_weight.csv")
 
         new_entries = self.insert_weight_entry(date, weight, user_weight_path)
         self.sort_weight_entries(user_weight_path, new_entries)
@@ -96,7 +96,7 @@ class WeightCog(commands.Cog):
         if not date:
             date = str(ctx.message.created_at.date())
     
-        user_weight_path = os.path.join(self.weight_cog_path, f"{user_id}.csv")
+        user_weight_path = os.path.join(self.weight_cog_data_path, f"{user_id}.csv")
 
         new_entries = self.insert_weight_entry(date, weight, user_weight_path)
         self.sort_weight_entries(user_weight_path, new_entries)
@@ -263,7 +263,7 @@ class WeightCog(commands.Cog):
     
         user = user or ctx.author
         user_id : str = str(user.id)
-        user_weight_path : str = os.path.join(self.weight_cog_path, f"{user_id}.csv")
+        user_weight_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}.csv")
     
         if not os.path.exists(user_weight_path):
             await ctx.send("No weight data found for this user.")
@@ -294,8 +294,9 @@ class WeightCog(commands.Cog):
         moving_avg_dates : List[date] = dates[moving_avg_period - 1:]
 
         self.create_weight_plot(dates, weights, moving_averages, moving_avg_dates)
-    
-        plot_path : str = os.path.join(self.weight_cog_path, f"{user_id}_plot.png")
+
+        # Saves plot
+        plot_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}_plot.png")
         plt.savefig(plot_path, transparent=True)
         plt.close()
 
@@ -322,8 +323,8 @@ class WeightCog(commands.Cog):
 
         user = user or ctx.author
         user_id : str = str(user.id)
-        user_weights_path : str = os.path.join(self.weight_cog_path, f"{user_id}.csv")
-        temp_user_weights_path : str = os.path.join(self.weight_cog_path, f"{user_id}_temp.csv")
+        user_weights_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}.csv")
+        temp_user_weights_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}_temp.csv")
 
         if not os.path.exists(user_weights_path):
             await ctx.send("No weight data found for this user.")
@@ -333,7 +334,7 @@ class WeightCog(commands.Cog):
         if not record_removed:
             await ctx.send(f"No weight record found for the date {date}.")
         else:
-            await ctx.send(f"Weight record for {row[0]} ({row[1]} kg) removed.")
+            await ctx.send(f"Weight record for {date} ({weight} kg) removed.")
 
     # TODO: This code can be put into WeightRepository
     @commands.command()
@@ -356,7 +357,7 @@ class WeightCog(commands.Cog):
     
         user = user or ctx.author
         user_id : str = str(user.id)
-        user_weights_path : str = os.path.join(self.weight_cog_path, f"{user_id}.csv")
+        user_weights_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}.csv")
     
         if not os.path.exists(user_weights_path):
             await ctx.send("No weight data found for this user.")
