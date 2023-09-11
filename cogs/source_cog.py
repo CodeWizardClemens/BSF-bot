@@ -75,7 +75,6 @@ class SourceCog(commands.Cog):
 
         return relevant_info_file
 
-    # TODO: Get rid of useless function?
     async def get_file_content(self, file_name : str):
         file_path : str = os.path.join(self.info_commands_path, file_name)
         try:

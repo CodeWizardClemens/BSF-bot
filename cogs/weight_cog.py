@@ -24,6 +24,7 @@ class WeightCog(commands.Cog):
             "monthly_avg": 30,
             "yearly_avg": 365
         }
+        self.HEADER_ROW : Final[List[str]] = ["Date", "Weight"]
 
     @commands.command()
     async def weight_goal(self, ctx : commands.Context, weight: float, user: discord.Member, date: str = None) -> None:
@@ -45,9 +46,6 @@ class WeightCog(commands.Cog):
             await ctx.send(f"You don't have the bot-input role and are therefore not allowed to specify other users")
             return
 
-        # TODO: Why are we asserting an optional argument?
-        #assert date
-
         try:
             weight : float = float(weight)
         except:
@@ -62,7 +60,7 @@ class WeightCog(commands.Cog):
 
         new_entries = self.insert_weight_entry(date, weight, user_weight_path)
         self.sort_weight_entries(user_weight_path, new_entries)
-    
+
         await ctx.send(f"Weight goal recorded for {date} ({user.display_name}): {weight} kg.")
 
     @commands.command()
@@ -81,7 +79,7 @@ class WeightCog(commands.Cog):
         :param date: (str, optional) The date of the weight entry (default: current date).
 
         """
-    
+
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(f"You don't have the bot-input role and are therefore not allowed to specify other users")
             return
@@ -90,7 +88,7 @@ class WeightCog(commands.Cog):
             weight = float(weight)
         except:
             await ctx.send(f"Not a valid weight.")
-    
+
         user = user or ctx.author
         user_id = str(user.id)
         if not date:
@@ -100,11 +98,11 @@ class WeightCog(commands.Cog):
 
         new_entries = self.insert_weight_entry(date, weight, user_weight_path)
         self.sort_weight_entries(user_weight_path, new_entries)
-    
+
         await ctx.send(f"Weight recorded for {date} ({user.display_name}): {weight} kg.")
 
     # TODO: Put this into WeightRepository
-    def sort_weight_entries(user_weight_path : str, entries) -> None:
+    def sort_weight_entries(self, user_weight_path : str, entries) -> None:
         """
         Sorts the weight entries by date and overwrites the CSV file with the sorted entries
         """
@@ -113,26 +111,24 @@ class WeightCog(commands.Cog):
         # Overwrite the CSV file with sorted entries
         with open(user_weight_path, "w", newline="") as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(header_row)  # Write header row
+            # Writes the header row
+            csv_writer.writerow(self.HEADER_ROW)
             csv_writer.writerows(entries)
 
     # TODO: Put this into WeightRepository
-    def insert_weight_entry(date : date, weight : float, user_weight_path : str):
+    def insert_weight_entry(self, date : date, weight : float, user_weight_path):
         """
         Reads the existing entries in the user_weight_path and inserts a new weight entry
         """
         # Read existing entries
         entries = []
-        header_row : List[str] = ["Date", "Weight"]
 
         if os.path.exists(user_weight_path):
             with open(user_weight_path, "r") as csvfile:
                 csv_reader : csv.reader = csv.reader(csvfile)
-                header_row = next(csv_reader)  # Read the header row
                 for row in csv_reader:
                     entries.append(row)
-    
-        # Add the new entry
+
         entries.append([date, weight])
         return entries
 
@@ -143,33 +139,27 @@ class WeightCog(commands.Cog):
         :returns: True if date is inside a period.
         """
         today = datetime.now().date()
-        periods = {
-            "last_week": timedelta(days=7),
-            "last_month": timedelta(days=30),
-            "last_year": timedelta(days=365)
-        }
 
         if period == "all":
             return True
 
         try:
-            time_delta : timedelta = periods[period]
+            time_delta : timedelta = self.MOVING_AVG_PERIODS[period]
         except:
             raise ValueError("Invalid period.")
         start = today - time_delta
         return start <= date <= today
 
     # TODO: Put this function into WeightRepository
-    def read_weight_data(user_weight_path : str, period):
+    def read_weight_data(self, user_weight_path : str, period):
         """
         Reads all of the user weight data relevant inside a period
         """
-
-        # Read weight data from CSV, skipping the header row
         user_weight_data = []
         with open(user_weight_path, "r") as csvfile:
             csv_reader : csv.reader = csv.reader(csvfile)
-            next(csv_reader)  # Skip the header row
+            # Skips the header row
+            next(csv_reader)
             for row in csv_reader:
                 date : date = datetime.strptime(row[0], "%Y-%m-%d").date()
                 if self.date_inside_period(period, date):
@@ -178,7 +168,10 @@ class WeightCog(commands.Cog):
 
         return user_weight_data
 
-    def create_weight_plot(dates, weights, moving_averages = None, moving_averages_dates = None) -> None:
+    """
+    Creates a time series line plot of how weight increases over time with the option to create a moving average line
+    """
+    def create_weight_plot(self, dates, weights, moving_averages = None, moving_averages_dates = None) -> None:
         has_moving_averages = moving_averages != None and moving_averages_dates != None
 
         plt.figure(figsize=(10, 6))
@@ -202,7 +195,7 @@ class WeightCog(commands.Cog):
             plt.legend()
 
     # TODO: Put this code into a WeightRepository
-    def remove_weight_record(user_weights_path : str, temp_user_weights_path : str, date : date) -> bool:
+    def remove_weight_record(self, user_weights_path : str, temp_user_weights_path : str, date : date) -> bool:
         """
         Removes the weight record for a user on a specific date
         """
@@ -241,7 +234,9 @@ class WeightCog(commands.Cog):
                 description="A mention to a discord user."),
             ) -> None:
         """
-        Display the weight history graph.
+        Displays a time series line graph showing the user's weight over time. It supports an optional moving average to calculate the moving average based on periods.
+
+        This requires Qt platform plugin "wayland".
 
         Usage:
         .stats <moving_average> <period> <user>
@@ -268,32 +263,35 @@ class WeightCog(commands.Cog):
         if not os.path.exists(user_weight_path):
             await ctx.send("No weight data found for this user.")
             return
-    
-        # Read weight data from CSV, skipping the header row
-        user_weight_data = self.read_weight_data(user_weight_path, period)
-        # Separate dates and weights
-        dates, weights = zip(*user_weight_data)
-    
-        # Calculate the moving average based on the provided argument
-        if moving_average == "no_avg":
-            self.create_weight_plot(dates, weights)
 
         try:
-            moving_avg_period : int = self.MOVING_AVG_PERIODS[moving_average]
-        except:
-            await ctx.send("Invalid moving average. Use 'weekly_avg', 'monthly_avg', or 'yearly_avg'.")
-            return
+            # Read weight data from CSV, skipping the header row
+            user_weight_data = self.read_weight_data(user_weight_path, period)
+            # Separate dates and weights
+            dates, weights = zip(*user_weight_data)
+        
+            # Calculate the moving average based on the provided argument
+            if moving_average == "no_avg":
+                self.create_weight_plot(dates, weights)
 
-        moving_averages : List[float] = []
-        # Calculates the moving averages based on the selected moving average period
-        for i in range(len(weights) - moving_avg_period + 1):
-            avg = np.mean(weights[i:i + moving_avg_period])
-            moving_averages.append(avg)
+            try:
+                moving_avg_period : int = self.MOVING_AVG_PERIODS[moving_average]
+            except:
+                await ctx.send("Invalid moving average. Use 'weekly_avg', 'monthly_avg', or 'yearly_avg'.")
+                return
 
-        # Adjust dates to match the moving average data length
-        moving_avg_dates : List[date] = dates[moving_avg_period - 1:]
+            moving_averages : List[float] = []
+            # Calculates the moving averages based on the selected moving average period
+            for i in range(len(weights) - moving_avg_period + 1):
+                avg = np.mean(weights[i:i + moving_avg_period])
+                moving_averages.append(avg)
 
-        self.create_weight_plot(dates, weights, moving_averages, moving_avg_dates)
+            # Adjust dates to match the moving average data length
+            moving_avg_dates : List[date] = dates[moving_avg_period - 1:]
+
+            self.create_weight_plot(dates, weights, moving_averages, moving_avg_dates)
+        except Exception as e:
+            print(e)
 
         # Saves plot
         plot_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}_plot.png")
