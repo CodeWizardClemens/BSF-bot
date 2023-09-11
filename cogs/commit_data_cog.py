@@ -51,14 +51,16 @@ class CommitDataCog(commands.Cog):
         
         commit_msg: str = f"(UTC: {current_date} {current_time}) Committing user data" 
 
-        # Changes the current directory to the data folder if possible
+        # Gets the current working directory of the subprocess/bot instance NOT the working directory of the root process
         working_dir = os.getcwd()
         try:
+            # Changes the current directory to the data folder if possible
             os.chdir(self.DATA_PATH)
         except FileNotFoundError as e:  
             print(f"Git could not find the data folder {self.DATA_PATH}.")
 
         self.commit_to_git(commit_msg)
+        # Exits out of the BSF-bot-data directory back into BSF-bot
         os.chdir(working_dir)
 
     """
