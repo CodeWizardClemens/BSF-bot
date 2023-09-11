@@ -14,9 +14,9 @@ class InfoCommandsCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
-        self.config : Dict[str, Any] = self.get_config()
-        self.save_directory : str = self.config["save-directory-path"]
-        os.makedirs(self.save_directory, exist_ok=True)
+        self.CONFIG : Dict[str, Any] = self.get_config()
+        self.INFO_COMMANDS_PATH : Final[Path] = Path(self.CONFIG["info-commands-path"])
+        self.INFO_COMMANDS_PATH.touch()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -24,24 +24,6 @@ class InfoCommandsCog(commands.Cog):
         Outputs the module name when the bot is ready
         """
         print("Module: InfoCommands")
-
-    # TODO: What does this command do?
-    @commands.command()
-    @commands.has_role("bot-input")
-    async def backup(self, ctx):
-        save_dir_found : bool = os.path.isdir(self.save_directory)
-        if not save_dir_found:
-            await ctx.send("Save directory not found.")
-            return
-
-        save_dir_files : List[str] = os.listdir(self.save_directory)
-        for filename in save_dir_files:
-            file_path = os.path.join(self.save_directory, filename)
-            if os.path.isfile(file_path):
-                with open(file_path, "r") as file:
-                    contents = file.read()
-                    message = f"**{filename[:-4]}**\n\n{contents}"
-                    await ctx.send(message)
 
     @commands.has_role("bot-input")
     @commands.command()
@@ -55,7 +37,7 @@ class InfoCommandsCog(commands.Cog):
             message (str): The content of the command.
 
         """
-        filename : str = f"{self.save_directory}{command.lower()}.txt"
+        filename : str = f"{self.INFO_COMMANDS_PATH}{command.lower()}.txt"
         with open(filename, "w") as file:
             file.write(message)
         await ctx.send(f"Command '{command.lower()}' learned and saved.")
@@ -69,7 +51,7 @@ class InfoCommandsCog(commands.Cog):
             ctx (commands.Context): The command context.
     
         """
-        saved_files : List[str] = os.listdir(self.save_directory)
+        saved_files : List[str] = os.listdir(self.INFO_COMMANDS_PATH)
         txt_files : List[str] = sorted([file[:-4] for file in saved_files if file.endswith(".txt")])
         if txt_files:
             file_list : List[str] = " ".join(txt_files)
@@ -87,7 +69,7 @@ class InfoCommandsCog(commands.Cog):
             command (str): The name of the command to display.
 
         """
-        filename : str = f"{self.save_directory}{command}.txt"
+        filename : str = f"{self.INFO_COMMANDS_PATH}{command}.txt"
         if os.path.isfile(filename):
             with open(filename, "r") as file:
                 content : str = file.read()
@@ -95,7 +77,7 @@ class InfoCommandsCog(commands.Cog):
         else:
             await ctx.send(f"No command named '{command}' found.")
 
-    # TODO: Couldn't we just call whatis ontop of this and add os.remove()? We could return a boolean that indicates if the command exists too
+    # TODO: Issue-10 Extract conversion logic to a library
     @commands.command()
     async def rm(self, ctx: commands.Context, command: str) -> None:
         """
@@ -106,7 +88,7 @@ class InfoCommandsCog(commands.Cog):
             command (str): The name of the command to remove.
 
         """
-        filename : str = f"{self.save_directory}{command}.txt"
+        filename : str = f"{self.INFO_COMMANDS_PATH}{command}.txt"
         if os.path.isfile(filename):
             with open(filename, "r") as file:
                 content : str = file.read()
