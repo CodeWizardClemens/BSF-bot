@@ -7,8 +7,10 @@ from dotenv import load_dotenv
 from pydub import AudioSegment
 import asyncio
 
-load_dotenv()
-TOKEN = os.getenv('DISCORD_TOKEN')
+import yaml
+from typing import Final
+
+TOKEN: Final[str] = yaml.safe_load(Path("discord_token.yaml").open())["discord_token"]
 
 client = commands.Bot(command_prefix = '.', intents=discord.Intents.all())
 
