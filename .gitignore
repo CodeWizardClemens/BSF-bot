@@ -1,4 +1,4 @@
-.env
+discord_token.yaml
 data
 cogs/__pycache__/
 *.pyc
