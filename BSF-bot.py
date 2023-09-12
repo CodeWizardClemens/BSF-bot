@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
+import asyncio
 import os
+from pathlib import Path
+from typing import Final
+
 import discord
+import yaml
 from discord.ext import commands
 from dotenv import load_dotenv
 from pydub import AudioSegment
-import asyncio
-
-import yaml
-from typing import Final
 
 TOKEN: Final[str] = yaml.safe_load(Path("discord_token.yaml").open())["discord_token"]
 
