@@ -20,9 +20,9 @@ class WeightCog(commands.Cog):
         self.config : Dict[str, Any] = self.get_config()
         self.weight_cog_data_path : str = self.config["weight-cog-data-path"]
         self.MOVING_AVG_PERIODS : Final[Dict[str, int]] = {
-            "weekly_avg": 7,
-            "monthly_avg": 30,
-            "yearly_avg": 365
+            "weekly_avg": 7, "last_week": 7,
+            "monthly_avg": 30, "last_month": 30,
+            "yearly_avg": 365, "last_year": 365
         }
         self.HEADER_ROW : Final[List[str]] = ["Date", "Weight"]
 
@@ -79,7 +79,6 @@ class WeightCog(commands.Cog):
         :param date: (str, optional) The date of the weight entry (default: current date).
 
         """
-
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(f"You don't have the bot-input role and are therefore not allowed to specify other users")
             return
@@ -98,7 +97,6 @@ class WeightCog(commands.Cog):
 
         new_entries = self.insert_weight_entry(date, weight, user_weight_path)
         self.sort_weight_entries(user_weight_path, new_entries)
-
         await ctx.send(f"Weight recorded for {date} ({user.display_name}): {weight} kg.")
 
     # TODO: Put this into WeightRepository
@@ -144,9 +142,11 @@ class WeightCog(commands.Cog):
             return True
 
         try:
-            time_delta : timedelta = self.MOVING_AVG_PERIODS[period]
+            days = self.MOVING_AVG_PERIODS[period]
+            time_delta : timedelta = timedelta(days)
         except:
-            raise ValueError("Invalid period.")
+            raise ValueError(f"Invalid period: {period}.")
+
         start = today - time_delta
         return start <= date <= today
 
@@ -161,6 +161,7 @@ class WeightCog(commands.Cog):
             # Skips the header row
             next(csv_reader)
             for row in csv_reader:
+                if row == self.HEADER_ROW: continue
                 date : date = datetime.strptime(row[0], "%Y-%m-%d").date()
                 if self.date_inside_period(period, date):
                     weight : float = float(row[1])
@@ -171,13 +172,18 @@ class WeightCog(commands.Cog):
     """
     Creates a time series line plot of how weight increases over time with the option to create a moving average line
     """
-    def create_weight_plot(self, dates, weights, moving_averages = None, moving_averages_dates = None) -> None:
-        has_moving_averages = moving_averages != None and moving_averages_dates != None
+    def create_weight_plot(self, dates, weights, user, moving_averages = None, moving_avg_dates = None) -> None:
+        has_moving_averages = moving_averages != None and moving_avg_dates != None
 
         plt.figure(figsize=(10, 6))
-        plt.plot(dates, weights, marker='o', color='red', linewidth=3)  # Weight data
-        if has_moving_averages:
-            plt.plot(moving_avg_dates, moving_averages, color='white', linewidth=3, label='Moving Average')  # Moving average
+        # Weight data
+        plt.plot(dates, weights, marker='o', color='red', linewidth=3)
+        try:
+            if has_moving_averages:
+                # Moving average
+                plt.plot(moving_avg_dates, moving_averages, color='white', linewidth=3, label='Moving Average')
+        except Exception as e:
+            print(e)
 
         plt.xlabel("Date", fontsize=16, color='white')
         plt.ylabel("Weight (kg)", fontsize=16, color='white')
@@ -191,6 +197,7 @@ class WeightCog(commands.Cog):
         plt.gca().tick_params(axis='x', colors='white')
         plt.gca().tick_params(axis='y', colors='white')
         plt.tight_layout()
+
         if has_moving_averages:
             plt.legend()
 
@@ -264,22 +271,19 @@ class WeightCog(commands.Cog):
             await ctx.send("No weight data found for this user.")
             return
 
-        try:
-            # Read weight data from CSV, skipping the header row
-            user_weight_data = self.read_weight_data(user_weight_path, period)
-            # Separate dates and weights
-            dates, weights = zip(*user_weight_data)
-        
-            # Calculate the moving average based on the provided argument
-            if moving_average == "no_avg":
-                self.create_weight_plot(dates, weights)
-
+        # Read weight data from CSV, skipping the header row
+        user_weight_data = self.read_weight_data(user_weight_path, period)
+        # Separate dates and weights
+        dates, weights = zip(*user_weight_data)
+        if moving_average == "no_avg":
+            self.create_weight_plot(dates, weights, user)
+        else:
             try:
                 moving_avg_period : int = self.MOVING_AVG_PERIODS[moving_average]
             except:
                 await ctx.send("Invalid moving average. Use 'weekly_avg', 'monthly_avg', or 'yearly_avg'.")
                 return
-
+            
             moving_averages : List[float] = []
             # Calculates the moving averages based on the selected moving average period
             for i in range(len(weights) - moving_avg_period + 1):
@@ -288,10 +292,7 @@ class WeightCog(commands.Cog):
 
             # Adjust dates to match the moving average data length
             moving_avg_dates : List[date] = dates[moving_avg_period - 1:]
-
-            self.create_weight_plot(dates, weights, moving_averages, moving_avg_dates)
-        except Exception as e:
-            print(e)
+            self.create_weight_plot(dates, weights, user, moving_averages, moving_avg_dates)
 
         # Saves plot
         plot_path : str = os.path.join(self.weight_cog_data_path, f"{user_id}_plot.png")
