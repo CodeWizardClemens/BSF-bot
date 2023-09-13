@@ -52,7 +52,7 @@ class ConversionCog(commands.Cog):
             total_inches : int = int(feet) * 12 + int(inches)
             cm : int = round(total_inches * 2.54)
             converted_height : str = f"{cm} cm"
-            converted_content : str = self.height_pattern.sub(self.converted_height, converted_content)
+            converted_content : str = ConversionCog.HEIGHT_PATTERN.sub(self.converted_height, converted_content)
 
         return converted_content
 
@@ -69,7 +69,7 @@ class ConversionCog(commands.Cog):
         for pounds in weight_matches:
             kg = round(float(pounds) * 0.45359237, 1)
             converted_weight : str = f"{kg} kg"
-            converted_content : str = self.weight_pattern.sub( converted_weight, converted_content)
+            converted_content : str = ConversionCog.WEIGHT_PATTERN.sub( converted_weight, converted_content)
 
         return converted_content
 

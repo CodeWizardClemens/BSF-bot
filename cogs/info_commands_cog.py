@@ -6,6 +6,10 @@ import yaml
 from typing import Final, Dict, Any, List
 from pathlib import Path
 
+def has_bot_input_perms(ctx):
+    role = discord.utils.get(ctx.guild.roles, name="bot-input")
+    return role in ctx.author.roles
+
 class InfoCommandsCog(commands.Cog):
     """
     A Discord cog for managing information commands.
@@ -37,7 +41,11 @@ class InfoCommandsCog(commands.Cog):
             message (str): The content of the command.
 
         """
-        filename : str = f"{self.INFO_COMMANDS_PATH}{command.lower()}.txt"
+        if user and (user != ctx.author) and not has_bot_input_perms(ctx):
+            await ctx.send(f"You don't have the bot-input role and are therefore nore allowed to specify other users")
+            return
+
+        filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         with open(filename, "w") as file:
             file.write(message)
         await ctx.send(f"Command '{command.lower()}' learned and saved.")
@@ -69,7 +77,7 @@ class InfoCommandsCog(commands.Cog):
             command (str): The name of the command to display.
 
         """
-        filename : str = f"{self.INFO_COMMANDS_PATH}{command}.txt"
+        filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         if os.path.isfile(filename):
             with open(filename, "r") as file:
                 content : str = file.read()
@@ -88,7 +96,7 @@ class InfoCommandsCog(commands.Cog):
             command (str): The name of the command to remove.
 
         """
-        filename : str = f"{self.INFO_COMMANDS_PATH}{command}.txt"
+        filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         if os.path.isfile(filename):
             with open(filename, "r") as file:
                 content : str = file.read()
