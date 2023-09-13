@@ -10,14 +10,14 @@ class SourceCog(commands.Cog):
     """
     A Discord cog for replying to 'source that' message and displaying the content of the most relevant file.
     """
+    CONFIG_PATH : Final[str] = Path("./BOT_CONFIG.yaml")
+    KEY_PHRASE : Final[str] = 'source that'
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.nlp = spacy.load("en_core_web_md")
-        self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
         self.config : Dict[str, Any] = self.get_config()
-        self.info_commands_path : str = self.config["info-commands-path"]
-        self.KEY_PHRASE : Final[str] = 'source that'
+        self.INFO_COMMANDS_PATH : Final[str] = self.config["info-commands-path"]
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -32,7 +32,7 @@ class SourceCog(commands.Cog):
             return
 
         lowercase_content = message.content.lower()
-        if self.KEY_PHRASE in lowercase_content:
+        if SourceCog.KEY_PHRASE in lowercase_content:
             replied_message = message.reference.resolved if message.reference else None
             if replied_message:
                 relevant_file = await self.search_files(replied_message.content)
@@ -53,10 +53,10 @@ class SourceCog(commands.Cog):
         preprocessed_input_doc = self.nlp(input_text)
 
         # Iterate through each file in the directory
-        saved_files : List[str] = os.listdir(self.info_commands_path)
+        saved_files : List[str] = os.listdir(self.INFO_COMMANDS_PATH)
         txt_files : List[str] = sorted([file[:-4] for file in saved_files if file.endswith(".txt")])
         for info_file_name in txt_files:
-            info_file_path = os.path.join(self.info_commands_path, info_file_name)
+            info_file_path = os.path.join(self.INFO_COMMANDS_PATH, info_file_name)
 
             # Read the contents of the file
             with open(info_file_path, "r") as info_file:
@@ -76,7 +76,7 @@ class SourceCog(commands.Cog):
         return relevant_info_file
 
     async def get_file_content(self, file_name : str):
-        file_path : str = os.path.join(self.info_commands_path, file_name)
+        file_path : str = os.path.join(self.INFO_COMMANDS_PATH, file_name)
         try:
             with open(file_path, "r") as file:
                 content = file.read()
@@ -88,7 +88,7 @@ class SourceCog(commands.Cog):
     Gets the config file contents that contain the data folder path
     """
     def get_config(self) -> Dict[str, Any]:
-        with open(self.CONFIG_PATH, 'r') as config_file:
+        with open(SourceCog.CONFIG_PATH, 'r') as config_file:
             return yaml.safe_load(config_file)
 
 async def setup(bot: commands.Bot) -> None:

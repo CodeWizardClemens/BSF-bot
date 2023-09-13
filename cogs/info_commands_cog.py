@@ -10,12 +10,12 @@ class InfoCommandsCog(commands.Cog):
     """
     A Discord cog for managing information commands.
     """
+    CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
-        self.CONFIG : Dict[str, Any] = self.get_config()
-        self.INFO_COMMANDS_PATH : Final[Path] = Path(self.CONFIG["info-commands-path"])
+        self.config : Dict[str, Any] = self.get_config()
+        self.INFO_COMMANDS_PATH : Final[Path] = Path(self.config["info-commands-path"])
         self.INFO_COMMANDS_PATH.touch()
 
     @commands.Cog.listener()

@@ -7,12 +7,12 @@ class ConversionCog(commands.Cog):
     """
     A Discord cog for converting height and weight values to metric units.
     """
+    # Compiled regular expressions as it may improve performance slightly
+    HEIGHT_PATTERN : re.Pattern = re.compile(r"(\d+)\s?['’]\s?(\d+)\s?(?:\"|inches?)?", re.IGNORECASE)
+    WEIGHT_PATTERN : re.Pattern = re.compile(r"(\d+(?:\.\d+)?)\s?(?:lbs?|pounds?)", re.IGNORECASE)
 
     def __init__(self, bot: commands.Bot):
         self.bot : commands.Bot = bot
-        # Compiled regular expressions as it may improve performance slightly
-        self.height_pattern : re.Pattern = re.compile(r"(\d+)\s?['’]\s?(\d+)\s?(?:\"|inches?)?", re.IGNORECASE)
-        self.weight_pattern : re.Pattern = re.compile(r"(\d+(?:\.\d+)?)\s?(?:lbs?|pounds?)", re.IGNORECASE)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
@@ -28,8 +28,8 @@ class ConversionCog(commands.Cog):
 
         content : str = message.content
 
-        height_matches : List[Tuple[str,str]] = self.height_pattern.findall(content)
-        weight_matches : List[str] = self.weight_pattern.findall(content)
+        height_matches : List[Tuple[str,str]] = ConversionCog.HEIGHT_PATTERN.findall(content)
+        weight_matches : List[str] = ConversionCog.WEIGHT_PATTERN.findall(content)
 
         # Converts the imperial units to metric units
         converted_content : str = self.convert_height_to_cm(self.convert_lbs_to_kgs(content, weight_matches), height_matches)

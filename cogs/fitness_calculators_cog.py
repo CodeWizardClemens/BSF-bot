@@ -4,14 +4,11 @@ from discord.ext import commands
 from typing import List, Final, Dict
 
 class FitnessCalculatorsCog(commands.Cog):
-    def __init__(self, bot : commands.Bot):
-        self.bot : commands.Bot = bot
-        ACTIVITY_KEYWORDS : Final[List[str]] = ['cutting', 'bulking', 'maintaining']
-        GENDER_KEYWORDS : Final[List[str]] = ['male', 'female', 'gal', 'guy']
-        
-        # TODO: Issue-10 Extract conversion logic to a library
-        # Mapping that defines regular expressions to extract the metrics
-        self.METRIC_MAPPING : Dict[str, re.Pattern] = {
+     # TODO: Issue-10 Extract conversion logic to a library
+    # Mapping that defines regular expressions to extract the metrics
+    ACTIVITY_KEYWORDS : Final[List[str]] = ['cutting', 'bulking', 'maintaining']
+    GENDER_KEYWORDS : Final[List[str]] = ['male', 'female', 'gal', 'guy']
+    METRIC_MAPPING : Dict[str, re.Pattern] = {
             "height": re.compile(r'(\d+(\.\d+)?)\s*cm', re.IGNORECASE),
             "weight": re.compile(r'(\d+(\.\d+)?)\s*kg', re.IGNORECASE),
             "bf": re.compile(r'(\d+(\.\d+)?)\s*bf', re.IGNORECASE),
@@ -19,8 +16,12 @@ class FitnessCalculatorsCog(commands.Cog):
             "age": re.compile(r'(\d+)\s*(?:years?|yo)', re.IGNORECASE),
             "activity": re.compile('|'.join(ACTIVITY_KEYWORDS), re.IGNORECASE)
         }
+    REPEATING_GROUPS = {"weight", "bodyfat", "age"}
+
+    def __init__(self, bot : commands.Bot):
+        self.bot : commands.Bot = bot
+        
         # This stores potentially repeatable data that doesn't need unique calculations
-        self.REPEATING_GROUPS = {"weight", "bodyfat", "age"}
         self.STAT_PIPE_LINE = [
             self.extract_bmi,
             self.extract_ffmi,
@@ -53,13 +54,13 @@ class FitnessCalculatorsCog(commands.Cog):
             "activity": None
         }
         content_lowercase = message_content.lowered()
-        for metric, regex in self.METRIC_MAPPING.items():
+        for metric, regex in FitnessCalculatorCog.METRIC_MAPPING.items():
             metric_match = regex.search(content_lowercase)
             if match:
                 if metric == "height":
                     height_in_cm = float(match.group(1)) / 100
                     metric_data[metric] = height_in_cm
-                elif metric in self.REPEATING_GROUPS:
+                elif metric in FitnessCalculatorCog.REPEATING_GROUPS:
                     metric_data[metric] = float(match.group(1))
                 else:
                     metric_data[metric] = float(match.group())
