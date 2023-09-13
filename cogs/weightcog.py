@@ -5,21 +5,33 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime, timedelta, date
-
+from typing import Dict, List, Final, Any
+from pathlib import Path
+import yaml
 
 def has_bot_input_perms(ctx):
     role = discord.utils.get(ctx.guild.roles, name="bot-input")
     return role in ctx.author.roles
 
 class WeightCog(commands.Cog):
-    def __init__(self, bot):
+    MOVING_AVG_PERIODS : Final[Dict[str, int]] = {
+        "weekly_avg": 7, "last_week": 7,
+        "monthly_avg": 30, "last_month": 30,
+        "yearly_avg": 365, "last_year": 365
+    }
+    # Header row of a user weight csv file
+    HEADER_ROW : Final[List[str]] = ["Date", "Weight"] 
+    
+    def __init__(self, bot : commands.Bot):
         self.bot = bot
-        self.data_folder = "./BSF-bot-data/weightcog/"
+        self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
+        self.config : Dict[str, Any] = self.get_config()
+        self.WEIGHT_COG_DATA_PATH : Final[str] = self.config["weight-cog-data-path"]
 
     @commands.command()
-    async def weight_goal(self, ctx, weight: float, date: str = None, user: discord.Member = None):
+    async def weight_goal(self, ctx : commands.Context, weight: float, user: discord.Member, date: str = None) -> None:
         """
-        Record your a weight goal.
+        Records a weight goal for a user.
 
         Usage:
         .weight <weight> <date> <user>
@@ -36,50 +48,27 @@ class WeightCog(commands.Cog):
             await ctx.send(f"You don't have the bot-input role and are therefore not allowed to specify other users")
             return
 
-        assert date
-        assert weight
-
         try:
-            weight = float(weight)
+            weight : float = float(weight)
         except:
             await ctx.send(f"Not a valid weight.")
     
         user = user or ctx.author
-        user_id = str(user.id)
+        user_id : str = str(user.id)
         if not date:
-            date = str(ctx.message.created_at.date())
+            date : str = str(ctx.message.created_at.date())
     
-        file_path = os.path.join(self.data_folder, f"{user_id}_goal_weight.csv")
-    
-        # Read existing entries
-        entries = []
-        header_row = ["Date", "Weight"]
-    
-        if os.path.exists(file_path):
-            with open(file_path, "r") as csvfile:
-                csv_reader = csv.reader(csvfile)
-                header_row = next(csv_reader)  # Read the header row
-                for row in csv_reader:
-                    entries.append(row)
-    
-        # Add the new entry
-        entries.append([date, weight])
-    
-        # Sort entries by date
-        entries.sort(key=lambda entry: entry[0])
-    
-        # Rewrite the CSV file with sorted entries
-        with open(file_path, "w", newline="") as csvfile:
-            csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(header_row)  # Write header row
-            csv_writer.writerows(entries)
-    
+        user_weight_path : str = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}_goal_weight.csv")
+
+        new_entries = self.insert_weight_entry(date, weight, user_weight_path)
+        self.sort_weight_entries(user_weight_path, new_entries)
+
         await ctx.send(f"Weight goal recorded for {date} ({user.display_name}): {weight} kg.")
 
     @commands.command()
     async def weight(self, ctx, weight: float, user: discord.Member = None, date: str = None):
         """
-        Record your daily weight.
+        Records a user's weight
 
         Usage:
         .weight <weight> [user] [date]
@@ -92,7 +81,6 @@ class WeightCog(commands.Cog):
         :param date: (str, optional) The date of the weight entry (default: current date).
 
         """
-    
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(f"You don't have the bot-input role and are therefore not allowed to specify other users")
             return
@@ -101,38 +89,48 @@ class WeightCog(commands.Cog):
             weight = float(weight)
         except:
             await ctx.send(f"Not a valid weight.")
-    
+
         user = user or ctx.author
         user_id = str(user.id)
         if not date:
             date = str(ctx.message.created_at.date())
     
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
-    
-        # Read existing entries
-        entries = []
-        header_row = ["Date", "Weight"]
-    
-        if os.path.exists(file_path):
-            with open(file_path, "r") as csvfile:
-                csv_reader = csv.reader(csvfile)
-                header_row = next(csv_reader)  # Read the header row
-                for row in csv_reader:
-                    entries.append(row)
-    
-        # Add the new entry
-        entries.append([date, weight])
-    
+        user_weight_path = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}.csv")
+
+        new_entries = self.insert_weight_entry(date, weight, user_weight_path)
+        self.sort_weight_entries(user_weight_path, new_entries)
+        await ctx.send(f"Weight recorded for {date} ({user.display_name}): {weight} kg.")
+
+    # TODO: Put this into WeightRepository
+    def sort_weight_entries(self, user_weight_path : str, entries) -> None:
+        """
+        Sorts the weight entries by date and overwrites the CSV file with the sorted entries
+        """
         # Sort entries by date
         entries.sort(key=lambda entry: entry[0])
-    
-        # Rewrite the CSV file with sorted entries
-        with open(file_path, "w", newline="") as csvfile:
+        # Overwrite the CSV file with sorted entries
+        with open(user_weight_path, "w", newline="") as csvfile:
             csv_writer = csv.writer(csvfile)
-            csv_writer.writerow(header_row)  # Write header row
+            # Writes the header row
+            csv_writer.writerow(WeightCog.HEADER_ROW)
             csv_writer.writerows(entries)
-    
-        await ctx.send(f"Weight recorded for {date} ({user.display_name}): {weight} kg.")
+
+    # TODO: Put this into WeightRepository
+    def insert_weight_entry(self, date : date, weight : float, user_weight_path):
+        """
+        Reads the existing entries in the user_weight_path and inserts a new weight entry
+        """
+        # Read existing entries
+        entries = []
+
+        if os.path.exists(user_weight_path):
+            with open(user_weight_path, "r") as csvfile:
+                csv_reader : csv.reader = csv.reader(csvfile)
+                for row in csv_reader:
+                    entries.append(row)
+
+        entries.append([date, weight])
+        return entries
 
     def date_inside_period(self, period: str, date: date) -> bool:
         """
@@ -142,23 +140,95 @@ class WeightCog(commands.Cog):
         """
         today = datetime.now().date()
 
-        if period == "last_week":
-            last_week_start = today - timedelta(days=7)
-            return last_week_start <= date <= today
-        elif period == "last_month":
-            last_month_start = today - timedelta(days=30)
-            return last_month_start <= date <= today
-        elif period == "last_year":
-            last_year_start = today - timedelta(days=365)
-            return last_year_start <= date <= today
-        elif period == "all":
+        if period == "all":
             return True
-        else:
-            raise ValueError("Invalid period")
+
+        try:
+            days = WeightCog.MOVING_AVG_PERIODS[period]
+            time_delta : timedelta = timedelta(days)
+        except:
+            raise ValueError(f"Invalid period: {period}.")
+
+        start = today - time_delta
+        return start <= date <= today
+
+    # TODO: Put this function into WeightRepository
+    def read_weight_data(self, user_weight_path : str, period):
+        """
+        Reads all of the user weight data relevant inside a period
+        """
+        user_weight_data = []
+        with open(user_weight_path, "r") as csvfile:
+            csv_reader : csv.reader = csv.reader(csvfile)
+            # Skips the header row
+            next(csv_reader)
+            for row in csv_reader:
+                if row == WeightCog.HEADER_ROW: continue
+                date : date = datetime.strptime(row[0], "%Y-%m-%d").date()
+                if self.date_inside_period(period, date):
+                    weight : float = float(row[1])
+                    user_weight_data.append((date, weight))
+
+        return user_weight_data
+
+    """
+    Creates a time series line plot of how weight increases over time with the option to create a moving average line
+    """
+    def create_weight_plot(self, dates, weights, user, moving_averages = None, moving_avg_dates = None) -> None:
+        has_moving_averages = moving_averages != None and moving_avg_dates != None
+
+        plt.figure(figsize=(10, 6))
+        # Weight data
+        plt.plot(dates, weights, marker='o', color='red', linewidth=3)
+        if has_moving_averages:
+            # Moving average
+            plt.plot(moving_avg_dates, moving_averages, color='white', linewidth=3, label='Moving Average')
+
+        plt.xlabel("Date", fontsize=16, color='white')
+        plt.ylabel("Weight (kg)", fontsize=16, color='white')
+        plt.title(f"Weight Record for {user.display_name}", fontsize=18, color='white')
+        plt.xticks(rotation=45, fontsize=12, color='white')
+        plt.yticks(fontsize=12, color='white')
+        plt.gca().spines['top'].set_visible(False)
+        plt.gca().spines['right'].set_visible(False)
+        plt.gca().spines['bottom'].set_color('white')
+        plt.gca().spines['left'].set_color('white')
+        plt.gca().tick_params(axis='x', colors='white')
+        plt.gca().tick_params(axis='y', colors='white')
+        plt.tight_layout()
+
+        if has_moving_averages:
+            plt.legend()
+
+    # TODO: Put this code into a WeightRepository
+    def remove_weight_record(self, user_weights_path : str, temp_user_weights_path : str, date : date) -> bool:
+        """
+        Removes the weight record for a user on a specific date
+        """
+        removed = False
+        with open(user_weights_path, "r") as input_file, open(temp_user_weights_path, "w", newline="") as output_file:
+            csv_reader : csv.reader = csv.reader(input_file)
+            csv_writer : csv.writer = csv.writer(output_file)
+
+            for row in csv_reader:
+                if row[0] == date:
+                    removed = True
+                else:
+                    csv_writer.writerow(row)
+
+        os.replace(temp_user_weights_path, user_weights_path)
+        return removed
+
+    """
+    Gets the config file contents that contain the data folder path
+    """
+    def get_config(self) -> Dict[str, Any]:
+        with open(self.CONFIG_PATH, 'r') as config_file:
+            return yaml.safe_load(config_file)
 
     @commands.command()
     async def stats(
-            self, ctx,
+            self, ctx : commands.Context,
             moving_average: str = commands.parameter(
                 default="no_avg",
                 description="Options: weekly_avg, monthly_avg, yearly_avg, no_avg."),
@@ -168,9 +238,11 @@ class WeightCog(commands.Cog):
             user: discord.Member = commands.parameter(
                 default=None,
                 description="A mention to a discord user."),
-            ):
+            ) -> None:
         """
-        Display the weight history graph.
+        Displays a time series line graph showing the user's weight over time. It supports an optional moving average to calculate the moving average based on periods.
+
+        This requires Qt platform plugin "wayland".
 
         Usage:
         .stats <moving_average> <period> <user>
@@ -191,97 +263,45 @@ class WeightCog(commands.Cog):
             return
     
         user = user or ctx.author
-        user_id = str(user.id)
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
+        user_id : str = str(user.id)
+        user_weight_path : str = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}.csv")
     
-        if not os.path.exists(file_path):
+        if not os.path.exists(user_weight_path):
             await ctx.send("No weight data found for this user.")
             return
-    
+
         # Read weight data from CSV, skipping the header row
-        data = []
-        with open(file_path, "r") as csvfile:
-            csv_reader = csv.reader(csvfile)
-            next(csv_reader)  # Skip the header row
-            for row in csv_reader:
-                date = datetime.strptime(row[0], "%Y-%m-%d").date()
-                if self.date_inside_period(period, date):
-                    weight = float(row[1])
-                    data.append((date, weight))
-    
+        user_weight_data = self.read_weight_data(user_weight_path, period)
         # Separate dates and weights
-        dates, weights = zip(*data)
-    
-        # Calculate the moving average based on the provided argument
-        if moving_average != "no_avg":
-            if moving_average == "weekly_avg":
-                moving_avg_period = 7  # 7 days for weekly average
-            elif moving_average == "monthly_avg":
-                moving_avg_period = 30  # Approximately 30 days for monthly average
-            elif moving_average == "yearly_avg":
-                moving_avg_period = 365  # 365 days for yearly average
-            else:
+        dates, weights = zip(*user_weight_data)
+        if moving_average == "no_avg":
+            self.create_weight_plot(dates, weights, user)
+        else:
+            try:
+                moving_avg_period : int = WeightCog.MOVING_AVG_PERIODS[moving_average]
+            except:
                 await ctx.send("Invalid moving average. Use 'weekly_avg', 'monthly_avg', or 'yearly_avg'.")
                 return
-    
-            moving_averages = []
+            
+            moving_averages : List[float] = []
+            # Calculates the moving averages based on the selected moving average period
             for i in range(len(weights) - moving_avg_period + 1):
                 avg = np.mean(weights[i:i + moving_avg_period])
                 moving_averages.append(avg)
-    
+
             # Adjust dates to match the moving average data length
-            moving_avg_dates = dates[moving_avg_period - 1:]
-    
-            # Create and save the plot with moving average
-            plt.figure(figsize=(10, 6))
-            plt.plot(dates, weights, marker='o', color='red', linewidth=3, label='Weight')  # Weight data
-            plt.plot(moving_avg_dates, moving_averages, color='white', linewidth=3, label='Moving Average')  # Moving average
-            plt.xlabel("Date", fontsize=16, color='white')
-            plt.ylabel("Weight (kg)", fontsize=16, color='white')
-            plt.title(f"Weight Record for {user.display_name}", fontsize=18, color='white')
-            plt.xticks(rotation=45, fontsize=12, color='white')
-            plt.yticks(fontsize=12, color='white')
-            plt.gca().spines['top'].set_visible(False)
-            plt.gca().spines['right'].set_visible(False)
-            plt.gca().spines['bottom'].set_color('white')
-            plt.gca().spines['left'].set_color('white')
-            plt.gca().tick_params(axis='x', colors='white')
-            plt.gca().tick_params(axis='y', colors='white')
-            plt.legend()
-            plt.tight_layout()
-    
-        else:
-            # Create and save the plot without moving average
-            plt.figure(figsize=(10, 6))
-            plt.plot(dates, weights, marker='o', color='red', linewidth=3)  # Weight data
-            plt.xlabel("Date", fontsize=16, color='white')
-            plt.ylabel("Weight (kg)", fontsize=16, color='white')
-            plt.title(f"Weight Record for {user.display_name}", fontsize=18, color='white')
-            plt.xticks(rotation=45, fontsize=12, color='white')
-            plt.yticks(fontsize=12, color='white')
-            plt.gca().spines['top'].set_visible(False)
-            plt.gca().spines['right'].set_visible(False)
-            plt.gca().spines['bottom'].set_color('white')
-            plt.gca().spines['left'].set_color('white')
-            plt.gca().tick_params(axis='x', colors='white')
-            plt.gca().tick_params(axis='y', colors='white')
-            plt.tight_layout()
-    
-        plot_path = os.path.join(self.data_folder, f"{user_id}_plot.png")
+            moving_avg_dates : List[date] = dates[moving_avg_period - 1:]
+            self.create_weight_plot(dates, weights, user, moving_averages, moving_avg_dates)
+
+        # Saves plot
+        plot_path : str = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}_plot.png")
         plt.savefig(plot_path, transparent=True)
         plt.close()
-    
-        # Send the plot as an embedded image
-        with open(plot_path, "rb") as plot_file:
-            plot_data = plot_file.read()
-        plot_embed = discord.Embed(title=f"Weight Record for {user.display_name}")
-        plot_embed.set_image(url="attachment://plot.png")
+
         await ctx.send(file=discord.File(plot_path, "plot.png"))
 
-
-
     @commands.command()
-    async def remove_weight(self, ctx, date: str, user: discord.Member = None):
+    async def remove_weight(self, ctx, date: str, user: discord.Member = None) -> None:
         """
         Remove a specific weight entry.
 
@@ -300,36 +320,23 @@ class WeightCog(commands.Cog):
 
 
         user = user or ctx.author
-        user_id = str(user.id)
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
-        temp_file_path = os.path.join(self.data_folder, f"{user_id}_temp.csv")
+        user_id : str = str(user.id)
+        user_weights_path : str = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}.csv")
+        temp_user_weights_path : str = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}_temp.csv")
 
-        if not os.path.exists(file_path):
+        if not os.path.exists(user_weights_path):
             await ctx.send("No weight data found for this user.")
             return
 
-        removed = False
-        with open(file_path, "r") as input_file, open(temp_file_path, "w", newline="") as output_file:
-            csv_reader = csv.reader(input_file)
-            csv_writer = csv.writer(output_file)
-
-            # Write header row
-            #csv_writer.writerow(["Date", "Weight"])
-
-            for row in csv_reader:
-                if row[0] == date:
-                    await ctx.send(f"Weight record for {row[0]} ({row[1]} kg) removed.")
-                    removed = True
-                else:
-                    csv_writer.writerow(row)
-
-        os.replace(temp_file_path, file_path)
-        if not removed:
+        record_removed : bool = self.remove_weight_record(user_weights_path, temp_user_weights_path, date)
+        if not record_removed:
             await ctx.send(f"No weight record found for the date {date}.")
+        else:
+            await ctx.send(f"Weight record for {date} removed.")
 
-
+    # TODO: This code can be put into WeightRepository
     @commands.command()
-    async def export(self, ctx, user: discord.Member = None):
+    async def export(self, ctx, user: discord.Member = None) -> None:
         """
         Export weight data as a CSV file.
     
@@ -347,30 +354,27 @@ class WeightCog(commands.Cog):
             return
     
         user = user or ctx.author
-        user_id = str(user.id)
-        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
+        user_id : str = str(user.id)
+        user_weights_path : str = os.path.join(self.WEIGHT_COG_DATA_PATH, f"{user_id}.csv")
     
-        if not os.path.exists(file_path):
+        if not os.path.exists(user_weights_path):
             await ctx.send("No weight data found for this user.")
             return
     
-        # Check permissions for exporting other users' data
-        if user != ctx.author and not ctx.author.guild_permissions.administrator:
+        has_permissions : bool = user == ctx.author and ctx.author.guild_permissions.administrator
+        if not has_permissions:
             await ctx.send("You don't have the necessary permissions to export other users' data.")
             return
     
         # Send the CSV file as an attachment
-        with open(file_path, "rb") as csv_file:
-            await ctx.send(
-                f"Weight data for {user.display_name}",
-                file=discord.File(csv_file, filename=f"{user.display_name}_weight_data.csv")
-            )
+        with open(user_weights_path, "rb") as csv_file:
+            csv_attachment : discord.File = discord.File(csv_file, filename=f"{user.display_name}_weight_data.csv")
+            await ctx.send(f"Weight data for {user.display_name}", file=csv_attachment)
 
-async def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot) -> None:
     """Setup function to add the ConversionCog cog to the bot.
 
     Args:
         bot (commands.Bot): The bot instance.
-
     """
     await bot.add_cog(WeightCog(bot))
