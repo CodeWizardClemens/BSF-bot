@@ -1,14 +1,9 @@
 import os
-from typing import List
 import discord
 from discord.ext import commands
 import yaml
 from typing import Final, Dict, Any, List
 from pathlib import Path
-
-def has_bot_input_perms(ctx):
-    role = discord.utils.get(ctx.guild.roles, name="bot-input")
-    return role in ctx.author.roles
 
 class InfoCommandsCog(commands.Cog):
     """
@@ -41,10 +36,6 @@ class InfoCommandsCog(commands.Cog):
             message (str): The content of the command.
 
         """
-        if user and (user != ctx.author) and not has_bot_input_perms(ctx):
-            await ctx.send(f"You don't have the bot-input role and are therefore nore allowed to specify other users")
-            return
-
         filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         with open(filename, "w") as file:
             file.write(message)

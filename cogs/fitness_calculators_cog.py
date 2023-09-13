@@ -1,7 +1,7 @@
 import re
 import discord
 from discord.ext import commands
-from typing import List, Final, Dict
+from typing import List, Final, Dict, Any
 
 class FitnessCalculatorsCog(commands.Cog):
      # TODO: Issue-10 Extract conversion logic to a library
@@ -54,16 +54,16 @@ class FitnessCalculatorsCog(commands.Cog):
             "activity": None
         }
         content_lowercase = message_content.lowered()
-        for metric, regex in FitnessCalculatorCog.METRIC_MAPPING.items():
+        for metric, regex in FitnessCalculatorsCog.METRIC_MAPPING.items():
             metric_match = regex.search(content_lowercase)
-            if match:
+            if metric_match:
                 if metric == "height":
-                    height_in_cm = float(match.group(1)) / 100
+                    height_in_cm = float(metric_match.group(1)) / 100
                     metric_data[metric] = height_in_cm
-                elif metric in FitnessCalculatorCog.REPEATING_GROUPS:
-                    metric_data[metric] = float(match.group(1))
+                elif metric in FitnessCalculatorsCog.REPEATING_GROUPS:
+                    metric_data[metric] = float(metric_match.group(1))
                 else:
-                    metric_data[metric] = float(match.group())
+                    metric_data[metric] = float(metric_match.group())
 
         return metric_data
 
@@ -71,9 +71,9 @@ class FitnessCalculatorsCog(commands.Cog):
     Extracts BMI with the assumption that `statistics` only consists of filled variables
     """
     def extract_bmi(self, metric_data, statistics):
-        can_get_bmi : bool = {"height", "weight"} in statistics
+        can_get_bmi : bool = {"height", "weight"} in metric_data
         if can_get_bmi:
-            statistics["bmi"] = filled_variables["weight"] / (filled_variables["height"] ** 2)
+            statistics["bmi"] = metric_data["weight"] / (metric_data["height"] ** 2)
         
         return statistics
 
@@ -81,11 +81,11 @@ class FitnessCalculatorsCog(commands.Cog):
     Extracts FFMI with the assumption that `statistics` only consists of filled variables
     """
     def extract_ffmi(self, metric_data, statistics):
-        can_get_ffmi : bool = {"height", "weight", "bodyfat"} in statistics
+        can_get_ffmi : bool = {"height", "weight", "bodyfat"} in metric_data
         if can_get_ffmi:
-            total_body_fat : float = weight * (bodyfat / 100)
-            lean_weight : float = weight - total_body_fat
-            statistics["ffmi"] = round((lean_weight / ((height /100) ** 2) + 6.1 * (1.8 - height / 100) ) / 10000,1)
+            total_body_fat : float = metric_data["weight"] * (metric_data["bodyfat"] / 100)
+            lean_weight : float = metric_data["weight"] - total_body_fat
+            statistics["ffmi"] = round((lean_weight / ((metric_data["height"] /100) ** 2) + 6.1 * (1.8 - metric_data["height"] / 100) ) / 10000,1)
 
         return statistics
 
@@ -93,10 +93,10 @@ class FitnessCalculatorsCog(commands.Cog):
     Extracts TDEE with the assumption that `statistics` only consists of filled variables
     """
     def extract_tdee(self, metric_data, statistics):
-        can_get_tdee : bool = {"height", "weight", "gender", "activity"} in statistics
+        can_get_tdee : bool = {"height", "weight", "gender", "activity"} in metric_data
         if can_get_tdee:
-            initial_tdee = 10 * weight + 6.25 * height - 5 * age
-            activity_lowercase = activity.lower()
+            initial_tdee = 10 * metric_data["weight"] + 6.25 * metric_data["height"] - 5 * metric_data["age"]
+            activity_lowercase = statistics["activity"].lower()
             statistics["tdee"] = initial_tdee
             if activity_lowercase == 'cutting':
                 statistics["tdee"] = initial_tdee - 161
@@ -111,7 +111,7 @@ class FitnessCalculatorsCog(commands.Cog):
         metric_data = self.extract_metrics(message.content)
 
         # Check if two or more variables are filled
-        filled_metrics = [var for metric_name, value in metric_data.items() if value is not None]
+        filled_metrics = [value for metric_name, value in metric_data.items() if value is not None]
         if len(filled_metrics < 2):
             return
 
