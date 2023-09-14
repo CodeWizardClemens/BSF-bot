@@ -7,3 +7,5 @@
 # Directory for storing user weight data.
 # weight_cog.py handles these data operations.
 "weight-cog-data-path": "./BSF-bot-data/weightcog/"
+# Default channel ID for creating polls
+"polls_channel_id": "962433889081626624"
