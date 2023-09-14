@@ -1,1 +1,11 @@
+# YAML Config file for configuring the BSF-bot data directories to help the bot identify where to find data
+
+# Base directory for the BSF-bot-data submodule.
 "data-folder": "BSF-bot-data"
+# Directory for the info_commands files.
+"info-commands-path": "./BSF-bot-data/info_commands/"
+# Directory for storing user weight data.
+# weight_cog.py handles these data operations.
+"weight-cog-data-path": "./BSF-bot-data/weightcog/"
+# Default channel ID for creating polls
+"polls_channel_id": "962433889081626624"
