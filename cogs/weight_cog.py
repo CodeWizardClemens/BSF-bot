@@ -332,7 +332,7 @@ class WeightCog(commands.Cog):
         if not record_removed:
             await ctx.send(f"No weight record found for the date {date}.")
         else:
-            await ctx.send(f"Weight record for {date} ({weight} kg) removed.")
+            await ctx.send(f"Weight record for {date} removed.")
 
     # TODO: This code can be put into WeightRepository
     @commands.command()
