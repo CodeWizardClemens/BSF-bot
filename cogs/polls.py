@@ -43,14 +43,14 @@ class PollsCog(Cog):
         The configuration for the bot.
         """
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_ready(self) -> None:
         """
         Displays the module name in the console once the cog is ready.
         """
         print(f"Module: {self.__class__.__name__}")
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_message(self, message: Message) -> None:
         """
         Listener that gets called when a discord message is send in any channel that the bot is
