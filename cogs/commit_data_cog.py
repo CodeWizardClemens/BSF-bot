@@ -21,7 +21,7 @@ class CommitDataCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot: commands.Bot = bot
-        self.CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
+        self.CONFIG_PATH: Final[str] = Path("./config.yaml")
         self.config : Dict[str, Any] = self.get_config()
         self.DATA_PATH: Final[str] = self.config["data-folder"]
         
