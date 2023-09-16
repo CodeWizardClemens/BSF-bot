@@ -1,0 +1,16 @@
+name: Nox
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+    - name: Install Nox
+      run: pip install nox
+    - name: Run Nox
+      run: nox
