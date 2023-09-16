@@ -12,5 +12,5 @@ jobs:
       uses: actions/setup-python@v2
     - name: Install Nox
       run: pip install nox
-    - name: Run Nox
-      run: nox
+    - name: Run checkers
+      run: nox --session checkers
