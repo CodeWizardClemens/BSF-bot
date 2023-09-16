@@ -1,45 +1,84 @@
+from pathlib import Path
+from typing import Any, Dict, Final
+
 import discord
-from discord.ext import commands
-from typing import Final, Dict, Any
 import yaml
+from discord.ext.commands.cog import Cog
+from discord.ext.commands.bot import Bot
+from discord.message import Message
 
-# TODO: Could we add support for multiple polls?
-class PollsCog(commands.Cog):
+"""
+Module which contains a Cog for a bot to automatically create polls.
+"""
+
+# TODO: Extend the polls cog to work with mutiple channels.
+# TODO: Replace the channel ID by an actual channel name. Or even better, allow a user to specify a
+# channel per discord server, and save this channel in the bot data.
+class PollsCog(Cog):
     """
-    A cog for creating polls for a specified channel ID
+    Cog for a bot to automatically create polls when a message is send in a specific channel with a
+    channel ID (which is set as the variable `polls_channel_id` in the config.yaml file).
     """
-    # Thumbs emojis for adding reactions to polls
-    THUMBS : Final[Dict[str,str]] = {
-        "thumbs_up": '\N{THUMBS UP SIGN}',
-        "thumbs_down": '\N{THUMBS DOWN SIGN}'
+
+    THUMBS: Final[Dict[str, str]] = {
+        "thumbs_up": "\N{THUMBS UP SIGN}",
+        "thumbs_down": "\N{THUMBS DOWN SIGN}",
     }
+    """
+    Codes for thumbs up and down emojis.
+    """
 
-    def __init__(self, bot):    
-        self.bot = bot
-        self.config = self.get_config()
-        # Default channel for polls
-        self.POLLS_CHANNEL_ID : Final[int] = self.config["polls_channel_id"]
+    CONFIG_PATH: Final[str] = Path("./config.yaml")
+    """
+    The configuration file of the bot.
+    """
+
+    def __init__(self, bot):
+        self.BOT: Final[Bot] = bot
+        """
+        The bot object itself.
+        """
+        self.CONFIG: Final[dict] = self.get_config()
+        """
+        The configuration for the bot.
+        """
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         """
-        Displays the module name in the console once the cog is ready
+        Displays the module name in the console once the cog is ready.
         """
-        print("Module: {self.class_name}")
+        print(f"Module: {self.__class__.__name__}")
 
     @commands.Cog.listener()
-    async def on_message(self, message) -> None:
-        # Creates poll based off thumbs up/down THUMBS
-        if(message.channel.id == self.POLLS_CHANNEL_ID):
-            await message.add_reaction(PollsCog.THUMBS["thumbs_up"])
-            await message.add_reaction(PollsCog.THUMBS["thumbs_down"])
+    async def on_message(self, message: Message) -> None:
+        """
+        Listener that gets called when a discord message is send in any channel that the bot is
+        present in.
+        """
+        if message.channel.id == self.CONFIG["polls_channel_id"]:
+            PollsCog.create_poll(message)
+        
+    @classmethod
+    async def create_poll(message: Message) -> None:
+        """
+        Creates poll by responding to a message with a thumbs ups, and a thumbs down.
 
-    """
-    Gets the config file contents that contain the data folder path
-    """
+        :param message: A discord message.
+        """
+        await message.add_reaction(PollsCog.THUMBS["thumbs_up"])
+        await message.add_reaction(PollsCog.THUMBS["thumbs_down"])
+
     def get_config(self) -> Dict[str, Any]:
-        with open(self.CONFIG_PATH, 'r') as config_file:
+        """Get the bot config."""
+        with open(self.CONFIG_PATH, "r") as config_file:
             return yaml.safe_load(config_file)
 
+
 async def setup(bot) -> None:
+    """
+    Add PollsCog to a discord Bot.
+
+    :param bot: The bot which PollsCog should be added too.
+    """
     await bot.add_cog(PollsCog(bot))
