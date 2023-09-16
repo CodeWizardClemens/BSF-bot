@@ -57,10 +57,10 @@ class PollsCog(Cog):
         present in.
         """
         if message.channel.id == self.CONFIG["polls_channel_id"]:
-            PollsCog.create_poll(message)
+            await PollsCog.create_poll(message)
         
     @classmethod
-    async def create_poll(message: Message) -> None:
+    async def create_poll(cls, message: Message) -> None:
         """
         Creates poll by responding to a message with a thumbs ups, and a thumbs down.
 
