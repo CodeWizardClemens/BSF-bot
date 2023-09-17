@@ -3,13 +3,14 @@ from typing import Any, Dict, Final
 
 import discord
 import yaml
-from discord.ext.commands.cog import Cog
 from discord.ext.commands.bot import Bot
+from discord.ext.commands.cog import Cog
 from discord.message import Message
 
 """
 Module which contains a Cog for a bot to automatically create polls.
 """
+
 
 # TODO: Extend the polls cog to work with mutiple channels.
 # TODO: Replace the channel ID by an actual channel name. Or even better, allow a user to specify a
@@ -58,7 +59,7 @@ class PollsCog(Cog):
         """
         if message.channel.id == self.CONFIG["polls_channel_id"]:
             await PollsCog.create_poll(message)
-        
+
     @classmethod
     async def create_poll(cls, message: Message) -> None:
         """

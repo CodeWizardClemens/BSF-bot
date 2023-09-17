@@ -1,9 +1,10 @@
 import os
-import discord
-from discord.ext import commands
-import yaml
-from typing import Final, Dict, Any, List
 from pathlib import Path
+from typing import Any, Dict, Final, List
+
+import discord
+import yaml
+from discord.ext import commands
 
 """
 Discord cog module that can be loaded through an extension. 
@@ -19,7 +20,7 @@ class InfoCommandsCog(commands.Cog):
 
         .whatis carbs
         <Displays information about carbs>
-    
+
     """
 
     CONFIG_PATH: Final[str] = Path("./config.yaml")
@@ -29,8 +30,8 @@ class InfoCommandsCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.config : Dict[str, Any] = self.get_config()
-        self.INFO_COMMANDS_PATH : Final[Path] = Path(self.config["info-commands-path"])
+        self.config: Dict[str, Any] = self.get_config()
+        self.INFO_COMMANDS_PATH: Final[Path] = Path(self.config["info-commands-path"])
         # Creates the info commands directory
         self.INFO_COMMANDS_PATH.touch()
 
@@ -53,7 +54,7 @@ class InfoCommandsCog(commands.Cog):
 
         """
 
-        info_filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
+        info_filename: str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         with open(info_filename, "w") as file:
             file.write(message)
         await ctx.send(f"Command '{command.lower()}' learned and saved.")
@@ -62,21 +63,23 @@ class InfoCommandsCog(commands.Cog):
     async def list(self, ctx: commands.Context) -> None:
         """
         List all saved commands in alphabetical order.
-    
+
         Args:
             ctx (commands.Context): The command context.
-    
+
         """
 
-        saved_info_files : List[str] = os.listdir(self.INFO_COMMANDS_PATH)
-        info_txt_files : List[str] = sorted([file[:-4] for file in saved_info_files if file.endswith(".txt")])
+        saved_info_files: List[str] = os.listdir(self.INFO_COMMANDS_PATH)
+        info_txt_files: List[str] = sorted(
+            [file[:-4] for file in saved_info_files if file.endswith(".txt")]
+        )
 
         if info_txt_files:
-            info_file_list : List[str] = " ".join(info_txt_files)
+            info_file_list: List[str] = " ".join(info_txt_files)
             await ctx.send(f"```Saved commands:\n{info_file_list}```")
         else:
             await ctx.send("No commands saved yet.")
-    
+
     @commands.command()
     async def whatis(self, ctx: commands.Context, command: str) -> None:
         """
@@ -88,10 +91,10 @@ class InfoCommandsCog(commands.Cog):
 
         """
 
-        info_filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
+        info_filename: str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         if os.path.isfile(info_filename):
             with open(info_filename, "r") as file:
-                content : str = file.read()
+                content: str = file.read()
             await ctx.send(content)
         else:
             await ctx.send(f"No info command named '{command}' found.")
@@ -108,11 +111,11 @@ class InfoCommandsCog(commands.Cog):
 
         """
 
-        info_filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
-        info_file_found : bool = os.path.isfile(info_filename)
+        info_filename: str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
+        info_file_found: bool = os.path.isfile(info_filename)
         if info_file_found:
             with open(info_filename, "r") as file:
-                content : str = file.read()
+                content: str = file.read()
             await ctx.send(f"Showing the command one last time\n {content}")
 
             os.remove(info_filename)
@@ -124,7 +127,7 @@ class InfoCommandsCog(commands.Cog):
         """
         Returns the config file contents that contain the data folder path.
         """
-        with open(self.CONFIG_PATH, 'r') as config_file:
+        with open(self.CONFIG_PATH, "r") as config_file:
             return yaml.safe_load(config_file)
 
 
