@@ -6,41 +6,59 @@ from pathlib import Path
 from typing import Dict, Final, List, Any
 import yaml
 
+"""
+Discord cog module that can be loaded through an extension. It can be used to prove/disprove claims made by other users.
+"""
+
 class SourceCog(commands.Cog):
     """
-    A Discord cog for replying to 'source that' message and displaying the content of the most relevant file.
+    A Discord cog that sources information about a topic in a message when invoked. 
+
+    To invoke the cog's listener, reply to a message that should be sourced for information via the Discord reply feature.
+    In the following example user2 invokes the listener through a key phrase so that the bot replies with more context on the topic.
+    
+    Example:
+
+        <user1> Carbs are unhealthy
+        <user2> key phrase (Replies to `Carbs are unhealthy`)
+        <bot> Content of the most relevant file (carbs.txt) Carbohydrates are not bad...
+
+
+    If relevant information about a topic cannot be found then the cog won't reply with a message.
     """
 
     CONFIG_PATH : Final[str] = Path("./config.yaml")
     """
-    Configuration file path for the bot
+    Configuration file path for the BOT.
     """
 
     KEY_PHRASE : Final[str] = 'source that'
     """
-    Key phrase to listen to when sourcing information
+    Key phrase to listen to for sourcing information.
     """
 
     PREPROCESS_PIPELINE : Final[spacy.lang.en.English] = spacy.load("en_core_web_md")
     """
-    Medium English NLP pipeline that preprocesses text documents. It can also extract a similarity metric
+    Medium English NLP pipeline that preprocesses text documents. 
+    It can also extract a similarity metric.
     """
 
-    def __init__(self, bot: commands.Bot):
-        self.bot : commands.Bot = bot
+    def __init__(self, bot: commands.bot):
+        self.BOT : Final[commands.bot] = bot
         self.CONFIG : Final[Dict[str, Any]] = self.get_config()
         self.INFO_COMMANDS_PATH : Final[str] = self.CONFIG["info-commands-path"]
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
         """
-        Listen for messages and replies to the 'source that' message with a relevant source. The user replies to a message with "source that" when they want a source.
+        Listen for messages and replies to the 'source that' message with a relevant source.
+        The user replies to a message with "source that" when they want a source.
 
         Args:
             message (discord.Message): The message sent by a user.
 
         """
-        if message.author == self.bot.user:
+        if message.author == self.BOT.user:
             return
 
         lowercase_content = message.content.lower()
@@ -60,13 +78,14 @@ class SourceCog(commands.Cog):
 
     async def search_files(self, input_text : str):
         """
-        Searches through all of the info command files to determine the most relevant file via the max similarity score. It assumes that the relevant info text file is in .txt format
+        Searches through all of the info command files to determine the most relevant file via the max similarity score.
+        It assumes that the relevant info text file is in .txt format.
 
         Args:
-            input_text (str): Input text from the replied message
+            input_text (str): Input text from the replied message.
         """
-        relevant_info_file = None
-        max_similarity : float = 0.0
+        relevant_info_file : Path | None = None
+        max_similarity = 0.0
 
         # Preprocess the input text to later compute similarity
         preprocessed_input_doc : spacy.tokens.doc.Doc = SourceCog.PREPROCESS_PIPELINE(input_text)
@@ -99,7 +118,7 @@ class SourceCog(commands.Cog):
         Extracts file content through a specified file name.
 
         Args:
-            file_name (str): Name of the file to extract content from
+            file_name (str): Name of the file to extract content from.
         """
         file_path : str = os.path.join(self.INFO_COMMANDS_PATH, file_name)
         try:
@@ -111,17 +130,17 @@ class SourceCog(commands.Cog):
 
     def get_config(self) -> Dict[str, Any]:
         """
-        Gets the config file contents that contain the data folder path
+        Gets the config file contents that contain the data folder path.
         """
         with open(SourceCog.CONFIG_PATH, 'r') as config_file:
             return yaml.safe_load(config_file)
 
 async def setup(bot: commands.Bot) -> None:
     """
-    Setup function to add the SourceCog cog to the bot.
+    Setup function to add the SourceCog cog to the BOT.
 
     Args:
-        bot (commands.Bot): The bot instance.
+        bot (commands.bot): The BOT instance.
 
     """
     await bot.add_cog(SourceCog(bot))
