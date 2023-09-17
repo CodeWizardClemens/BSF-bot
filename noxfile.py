@@ -1,3 +1,5 @@
+import shlex
+
 import nox
 
 """
@@ -22,6 +24,7 @@ View the Nox help pages:
     nox --help
 """
 
+
 @nox.session
 def format(session):
     """
@@ -35,16 +38,20 @@ def format(session):
 
 
 @nox.session
-def lint(session):
+def checkers(session):
     """
-    Run all linters.
+    Run all checkers.
     """
+    session.install("black")
+    session.install("isort")
     session.install("ruff")
-    session.install("flake8")
     session.install("pylint")
-    session.install("pydocstyle")
 
+    # TODO Test of adding the bandit tool adds vallue to the checkers. It is fairly slow, but might
+    # help with writing more secure code.
+    # session.install("bandit")
+
+    session.run("black", "--check", "./")
+    session.run("isort", "--check", "./")
     session.run("ruff", "./")
-    session.run("flake8")
-    session.run("pylint *.py")
-    session.run("pydocstyle")
+    session.run("pylint", "./**/*.py")

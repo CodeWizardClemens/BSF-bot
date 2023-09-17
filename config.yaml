@@ -1,2 +1,4 @@
 "data-folder": "BSF-bot-data"
 "info-commands-path": "./BSF-bot-data/info_commands/"
+"weight-cog-data-path": "./BSF-bot-data/weightcog/"
+"polls_channel_id": 962433889081626624

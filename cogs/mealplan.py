@@ -2,44 +2,46 @@
 
 import discord
 from discord.ext import commands
+from typing import Optional, Dict
 
-goal_dict = {
-        1: "Bulk",
-        2: "Cut",
-        3: "Maintain",
+goal_dict: Dict[int, str] = {
+    1: "Bulk",
+    2: "Cut",
+    3: "Maintain",
 }
 
-bodyfat_dict = {
-        1: "30+",
-        2: 25,
-        3: 20,
-        4: 15,
-        5: 10,
-        6: None,
-}
-gender_dict = {
-        1: "Male",
-        2: "Female",
+bodyfat_dict: Dict[int, Optional[int]] = {
+    1: 30,
+    2: 25,
+    3: 20,
+    4: 15,
+    5: 10,
+    6: None,
 }
 
-activity_dict = {
-        1: 1.2,
-        2: 1.375,
-        3: 1.55,
-        4: 1.725,
-        5: 1.9,
+gender_dict: Dict[int, str] = {
+    1: "Male",
+    2: "Female",
 }
 
-diet_goal_kcals_conversion = {
-        "Bulk": 200,
-        "Cut": -500,
-        "Maintain": 0,
+activity_dict: Dict[int, float] = {
+    1: 1.2,
+    2: 1.375,
+    3: 1.55,
+    4: 1.725,
+    5: 1.9,
 }
 
-goal_protein_multyplier = {
-        "Bulk": 1.6,
-        "Cut": 2,
-        "Maintain": 1.8,
+diet_goal_kcals_conversion: Dict[str, int] = {
+    "Bulk": 200,
+    "Cut": -500,
+    "Maintain": 0,
+}
+
+goal_protein_multiplier: Dict[str, float] = {
+    "Bulk": 1.6,
+    "Cut": 2,
+    "Maintain": 1.8,
 }
 
 def calculate_state_weight_martin_gerkhan(height):
@@ -49,7 +51,7 @@ def calculate_state_weight_martin_gerkhan(height):
     r = 0.1 * (height - 190) + 101
     return height - r
 
-def getMaxWeight(ffmi, cm, bf):
+def get_max_weight(ffmi, cm, bf):
 
     lean_kg = (ffmi - (6.1 * (1.8 - cm*0.01)) ) * pow(cm*0.01,2)
     kg = lean_kg + lean_kg * bf / 100
@@ -83,15 +85,10 @@ def calculate_adjusted_ffmi(weight, height, bodyfat):
     return calculate_ffmi(weight, height, bodyfat) + 6.1 * ( 1.8 - (height / 100))
 
 def calculate_protein(bodyweight, goal, bodyfat):
-
     bodyfat_multiplier = 0
     
-    if bodyweight is None:
+    if bodyweight is None or goal is None or bodyfat is None:
         raise TypeError 
-    if goal is None:
-        raise TypeError 
-    if bodyfat is None:
-        raise TypeError
 
     if bodyfat <= 10:
         bodyfat_multiplier = 1.2
@@ -100,7 +97,7 @@ def calculate_protein(bodyweight, goal, bodyfat):
     else:
         bodyfat_multiplier = 1
 
-    return round(bodyweight * goal_protein_multyplier[goal] * bodyfat_multiplier)
+    return round(bodyweight * goal_protein_multiplier[goal] * bodyfat_multiplier)
 
 def calculate_fats(kcals):
     if kcals is None:
@@ -108,43 +105,29 @@ def calculate_fats(kcals):
     return round(kcals * 0.2 / 9)
 
 def calculate_carbs(kcals, fats, protein):
-    if kcals is None:
-        raise TypeError 
-    if fats is None:
-        raise TypeError 
-    if protein is None:
+    if kcals is None or fats is None or protein is None:
         raise TypeError 
     return round((kcals - fats * 9 - protein*4) / 4)
 
 def calculate_tdee(bmr, multiplier):
-    if bmr is None:
-        raise TypeError 
-    if multiplier is None:
+    if bmr is None or multiplier is None:
         raise TypeError 
     return round(bmr * multiplier)
 
 def calculate_bmi(bodyweight, height):
-    if bodyweight is None:
-        raise TypeError 
-    if height is None:
+    if bodyweight is None or height is None:
         raise TypeError 
     return round(bodyweight / pow((height / 100), 2))
 
 def calculate_bmr(bodyweight, height, age, gender):
-    if bodyweight is None:
+    if bodyweight is None or height is None or age is None or gender is None:
         raise TypeError 
-    if height is None:
-        raise TypeError 
-    if age is None:
-        raise TypeError 
-    if gender is None:
-        raise TypeError
 
     if gender == "Male":
         return round( (13.397 * bodyweight) + (4.799 * height) - (5.677 * age) +  88.362)
     return round( (9.247 * bodyweight) + (3.098 * height) - (4.330 * age) + 447.593 )
 
-class Mealplan(commands.Cog):
+class MealplanCog(commands.Cog):
     
     def __init__(self, client):    
         self.client = client
@@ -172,7 +155,7 @@ class Mealplan(commands.Cog):
 
     @commands.command(brief='Create a meal plan')
     async def mealplan(self, ctx):
-        await ctx.send("__**Diclamer/Introduction**__\n"
+        await ctx.send("__**Disclaimer/Introduction**__\n"
                        "Hi! I will help you give some personallised nutrition recommendations "
                        "based on some questions I'm going to ask you. Be mindful that I'm just "
                        "a tool and not a certified proffesional. My recommendations are oversimplified "
@@ -237,7 +220,7 @@ class Mealplan(commands.Cog):
                    f"If you lose about 1kg per month up the carbs to {self.macros['carbs']+50}. ")
         elif self.goal == "Bulk":
             return ("You will need to track your weight to make sure you are gaining "
-                   "About 1kg per month. if this is not the case. Bump up the carbs to about "
+                   "About 1kg per month. If this is not the case. Bump up the carbs to about "
                    f"{self.macros['carbs']+50} to {self.macros['carbs']+75} grams.")
         elif self.goal == "Cut":
             return ("You will need to track you weight to make sure you are lowing weight on average "
@@ -252,7 +235,9 @@ class Mealplan(commands.Cog):
             def check(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check)
-            if msg.content.isnumeric() and 1 <= int(msg.content) <= 2:
+
+            valid_kcal_inputs = msg.content.isnumeric() and 1 <= int(msg.content) <= 2
+            if valid_kcal_inputs:
                 break
             else:
                 await ctx.send("Pick number 1 or 2")
@@ -269,7 +254,9 @@ class Mealplan(commands.Cog):
             def check(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check)
-            if msg.content.isnumeric() and 1 <= int(msg.content) <= 2:
+
+            valid_mealplan_inputs = msg.content.isnumeric() and 1 <= int(msg.content) <= 2
+            if valid_mealplan_inputs:
                 if int(msg.content) == 1:
                     return False
                 return True
@@ -288,7 +275,9 @@ class Mealplan(commands.Cog):
             def check(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check)
-            if msg.content.isnumeric() and 1000 <= int(msg.content) <= 10000:
+
+            valid_kcal_needs = msg.content.isnumeric() and 1000 <= int(msg.content) <= 10000
+            if valid_kcal_needs:
                 self.kcals = int(msg.content)
                 print(f"kcals: {self.kcals}")
                 break
@@ -302,7 +291,9 @@ class Mealplan(commands.Cog):
             def check(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check)
-            if msg.content.isnumeric() and 140 <= int(msg.content) <= 250:
+
+            valid_height_cm = msg.content.isnumeric() and 140 <= int(msg.content) <= 250
+            if valid_height_cm:
                 self.height = int(msg.content)
                 print(f"height: {self.height}")
                 break
@@ -316,7 +307,9 @@ class Mealplan(commands.Cog):
             def check(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check)
-            if msg.content.isnumeric() and 18 <= int(msg.content) <= 85:
+
+            valid_age = msg.content.isnumeric() and 18 <= int(msg.content) <= 85
+            if valid_age:
                 self.age = int(msg.content)
                 print(f"age: {self.age}")
                 break
@@ -335,7 +328,9 @@ class Mealplan(commands.Cog):
             def check_same_channel(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check_same_channel)
-            if msg.content.isnumeric() and 1 <= int(msg.content) <= 6:
+
+            valid_bodyfat = msg.content.isnumeric() and 1 <= int(msg.content) <= 6
+            if valid_bodyfat:
                 self.bodyfat = bodyfat_dict[int(msg.content)]
                 print(f"bodyfat: {self.bodyfat}")
                 break
@@ -343,16 +338,18 @@ class Mealplan(commands.Cog):
                 await ctx.send("Please enter a number 1 and 6.")
 
         if not self.bodyfat:
-            await self.ask_bodyfat_specefic_number(ctx)
+            await self.ask_bodyfat_specific_number(ctx)
 
-    async def ask_bodyfat_specefic_number(self, ctx):
+    async def ask_bodyfat_specific_number(self, ctx):
         await ctx.send("What is your bodyfat percentage? Only type the number.")
 
         while(True):
             def check_same_channel(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check_same_channel)
-            if msg.content.isnumeric() and 3 <= int(msg.content) <= 50:
+
+            valid_bf_value = msg.content.isnumeric() and 3 <= int(msg.content) <= 50
+            if valid_bf_value:
                 self.bodyfat = int(msg.content)
                 print(f"bodyfat: {self.bodyfat}")
                 break
@@ -367,7 +364,8 @@ class Mealplan(commands.Cog):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check_same_channel)
 
-            if msg.content.isnumeric() and 30 <= int(msg.content) <= 300:
+            valid_weight = msg.content.isnumeric() and 30 <= int(msg.content) <= 300
+            if valid_weight:
                 self.bodyweight = int(msg.content)
                 print(f"bodyweight: {self.bodyweight}")
                 break
@@ -382,7 +380,9 @@ class Mealplan(commands.Cog):
             def check_same_channel(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check_same_channel)
-            if msg.content.lower() == "male" or msg.content.lower() == "female":
+
+            lowercase_content = msg.content.lower()
+            if lowercase_content == "male" or lowercase_content == "female":
                 self.gender = msg.content
                 print(f"gender: {self.gender}")
                 break
@@ -399,34 +399,37 @@ class Mealplan(commands.Cog):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check_same_channel)
 
-            if msg.content.isnumeric() and 1 <= int(msg.content) <= 3:
+            valid_goal_input : bool = msg.content.isnumeric() and 1 <= int(msg.content) <= 3
+            if valid_goal_input:
                 self.goal = goal_dict[int(msg.content)]
                 print(f"goal: {self.goal}")
                 break
             else:
-                await ctx.send("Please give a valid responce between 1 and 3")
+                await ctx.send("Please give a valid response between 1 and 3")
 
 
     async def ask_activity_level(self, ctx):
         await ctx.send("__**How active are you planing to be on your diet?**__\n"
                        "1) Sedentary. With little to no excercise\n"
-                       "2) Light excersice. 1 to 3  times per week\n" 
+                       "2) Light exercise. 1 to 3  times per week\n" 
                        "3) Moderately active. 3-5 times per week\n"
-                       "4) heavy cardio intensive excersice. 6-7x a week\n"
+                       "4) heavy cardio intensive exercise. 6-7x a week\n"
                        "5) Very heavy exercise. Twice per day, Or active day job")
         while(True):
             def check_same_channel(msg):
                 return msg.channel == ctx.channel
             msg = await self.client.wait_for("message", check=check_same_channel)
-            if  msg.content.isnumeric() and 1 <= int(msg.content) <= 5:
+
+            valid_activity_level : bool = msg.content.isnumeric() and 1 <= int(msg.content) <= 5
+            if valid_activity_level:
                 self.activity_level = activity_dict[int(msg.content)]
                 print(f"activity_level: {self.activity_level}")
                 break
             else:
-                await ctx.send("Please give a valid responce between 1 and 5")
+                await ctx.send("Please give a valid response between 1 and 5")
 
 async def setup(client):
-    await client.add_cog(Mealplan(client))
+    await client.add_cog(MealplanCog(client))
 
 if __name__ == "__main__":
     breakpoint()
