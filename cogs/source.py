@@ -10,7 +10,7 @@ class SourceCog(commands.Cog):
     """
     A Discord cog for replying to 'source that' message and displaying the content of the most relevant file.
     """
-    CONFIG_PATH : Final[str] = Path("./BOT_CONFIG.yaml")
+    CONFIG_PATH : Final[str] = Path("./config.yaml")
     KEY_PHRASE : Final[str] = 'source that'
 
     def __init__(self, bot: commands.Bot):
