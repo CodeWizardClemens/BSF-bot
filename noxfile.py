@@ -30,10 +30,11 @@ def format(session):
     """
     Run code formatter.
     """
-    session.install("black")
-    session.install("isort")
 
+    session.install("black")
     session.run("black", "./")
+
+    session.install("isort")
     session.run("isort", "./")
 
 
@@ -42,16 +43,18 @@ def checkers(session):
     """
     Run all checkers.
     """
-    session.install("black")
-    session.install("isort")
-    session.install("ruff")
-    session.install("pylint")
 
     # TODO Test of adding the bandit tool adds vallue to the checkers. It is fairly slow, but might
     # help with writing more secure code.
     # session.install("bandit")
 
+    session.install("black")
     session.run("black", "--check", "./")
+    session.install("isort")
     session.run("isort", "--check", "./")
-    session.run("ruff", "./")
-    session.run("pylint", "./**/*.py")
+
+    # TODO, Turn checkers on.
+    # session.install("ruff")
+    # session.run("ruff", "./")
+    # session.install("pylint")
+    # session.run("pylint", "./**/*.py")
