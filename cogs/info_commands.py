@@ -5,23 +5,39 @@ import yaml
 from typing import Final, Dict, Any, List
 from pathlib import Path
 
+"""
+Discord cog module that can be loaded through an extension. 
+"""
+
+
 class InfoCommandsCog(commands.Cog):
     """
-    A Discord cog for managing information commands.
+    A Discord cog for managing information commands through CRUD operations. Users can use the information commands
+    to learn about a topic.
+
+    Example:
+
+        .whatis carbs
+        <Displays information about carbs>
+    
     """
-    CONFIG_PATH: Final[str] = Path("./BOT_CONFIG.yaml")
+
+    CONFIG_PATH: Final[str] = Path("./config.yaml")
+    """
+    Bot configuration path used to get data directory paths.
+    """
 
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.config : Dict[str, Any] = self.get_config()
         self.INFO_COMMANDS_PATH : Final[Path] = Path(self.config["info-commands-path"])
+        # Creates the info commands directory
         self.INFO_COMMANDS_PATH.touch()
 
     @commands.Cog.listener()
-    async def on_ready(self):
-        """
-        Outputs the module name when the bot is ready
-        """
+    async def on_ready(self) -> None:
+        """Outputs the module name when the bot is ready."""
+
         print("Module: InfoCommands")
 
     @commands.has_role("bot-input")
@@ -32,12 +48,13 @@ class InfoCommandsCog(commands.Cog):
 
         Args:
             ctx (commands.Context): The command context.
-            command (str): The name of the command.
-            message (str): The content of the command.
+            command (str): The name of the new info command.
+            message (str): The content of the new info command.
 
         """
-        filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
-        with open(filename, "w") as file:
+
+        info_filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
+        with open(info_filename, "w") as file:
             file.write(message)
         await ctx.send(f"Command '{command.lower()}' learned and saved.")
 
@@ -50,11 +67,13 @@ class InfoCommandsCog(commands.Cog):
             ctx (commands.Context): The command context.
     
         """
-        saved_files : List[str] = os.listdir(self.INFO_COMMANDS_PATH)
-        txt_files : List[str] = sorted([file[:-4] for file in saved_files if file.endswith(".txt")])
-        if txt_files:
-            file_list : List[str] = " ".join(txt_files)
-            await ctx.send(f"```Saved commands:\n{file_list}```")
+
+        saved_info_files : List[str] = os.listdir(self.INFO_COMMANDS_PATH)
+        info_txt_files : List[str] = sorted([file[:-4] for file in saved_info_files if file.endswith(".txt")])
+
+        if info_txt_files:
+            info_file_list : List[str] = " ".join(info_txt_files)
+            await ctx.send(f"```Saved commands:\n{info_file_list}```")
         else:
             await ctx.send("No commands saved yet.")
     
@@ -65,49 +84,53 @@ class InfoCommandsCog(commands.Cog):
 
         Args:
             ctx (commands.Context): The command context.
-            command (str): The name of the command to display.
+            command (str): The name of the info command to display.
 
         """
-        filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
-        if os.path.isfile(filename):
-            with open(filename, "r") as file:
+
+        info_filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
+        if os.path.isfile(info_filename):
+            with open(info_filename, "r") as file:
                 content : str = file.read()
             await ctx.send(content)
         else:
-            await ctx.send(f"No command named '{command}' found.")
+            await ctx.send(f"No info command named '{command}' found.")
 
     # TODO: Issue-10 Extract conversion logic to a library
     @commands.command()
     async def rm(self, ctx: commands.Context, command: str) -> None:
         """
-        Remove a saved command file.
+        Removes a saved info command file.
 
         Args:
             ctx (commands.Context): The command context.
-            command (str): The name of the command to remove.
+            command (str): The name of the info command to remove.
 
         """
-        filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
-        if os.path.isfile(filename):
-            with open(filename, "r") as file:
+
+        info_filename : str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
+        info_file_found : bool = os.path.isfile(info_filename)
+        if info_file_found:
+            with open(info_filename, "r") as file:
                 content : str = file.read()
             await ctx.send(f"Showing the command one last time\n {content}")
 
-            os.remove(filename)
+            os.remove(info_filename)
             await ctx.send(f"Command '{command}' removed.")
         else:
             await ctx.send(f"No command named '{command}' found.")
 
-    """
-    Gets the config file contents that contain the data folder path
-    """
     def get_config(self) -> Dict[str, Any]:
+        """
+        Returns the config file contents that contain the data folder path.
+        """
         with open(self.CONFIG_PATH, 'r') as config_file:
             return yaml.safe_load(config_file)
 
 
 async def setup(client: commands.Bot) -> None:
-    """Setup function to add the InfoCommands cog to the bot.
+    """
+    Setup function to add the InfoCommandsCog cog to the bot.
 
     Args:
         client (commands.Bot): The bot instance.
