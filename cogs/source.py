@@ -5,9 +5,11 @@ from typing import Any, Dict, Final, List
 import discord
 import spacy
 import yaml
+from discord.ext import commands
 
 """
-Discord cog module that can be loaded through an extension. It can be used to prove/disprove claims made by other users.
+Discord cog module that can be loaded through an extension. It can be used to prove/disprove claims
+made by other users.
 """
 
 
@@ -15,8 +17,9 @@ class SourceCog(commands.Cog):
     """
     A Discord cog that sources information about a topic in a message when invoked.
 
-    To invoke the cog's listener, reply to a message that should be sourced for information via the Discord reply feature.
-    In the following example user2 invokes the listener through a key phrase so that the bot replies with more context on the topic.
+    To invoke the cog's listener, reply to a message that should be sourced for information via the
+    Discord reply feature. In the following example user2 invokes the listener through a key phrase
+    so that the bot replies with more context on the topic.
 
     Example:
 
@@ -76,13 +79,14 @@ class SourceCog(commands.Cog):
                     if file_content:
                         channel = message.channel
                         await channel.send(
-                            f"Content of the most relevant file ({relevant_file}):\n{file_content}\n"
+                            f"Content of the most relevant file ({relevant_file}):\n"
+                            f"{file_content}\n"
                         )
 
     async def search_files(self, input_text: str):
         """
-        Searches through all of the info command files to determine the most relevant file via the max similarity score.
-        It assumes that the relevant info text file is in .txt format.
+        Searches through all of the info command files to determine the most relevant file via the
+        max similarity score. It assumes that the relevant info text file is in .txt format.
 
         Args:
             input_text (str): Input text from the replied message.

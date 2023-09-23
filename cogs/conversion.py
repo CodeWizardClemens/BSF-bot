@@ -59,7 +59,7 @@ class ConversionCog(commands.Cog):
             cm: int = round(total_inches * 2.54)
             converted_height: str = f"{cm} cm"
             converted_content: str = ConversionCog.HEIGHT_PATTERN.sub(
-                self.converted_height, converted_content
+                converted_height, converted_content
             )
 
         return converted_content

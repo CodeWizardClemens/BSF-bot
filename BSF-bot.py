@@ -8,8 +8,6 @@ from typing import Final
 import discord
 import yaml
 from discord.ext import commands
-from dotenv import load_dotenv
-from pydub import AudioSegment
 
 TOKEN: Final[str] = yaml.safe_load(Path("discord_token.yaml").open())["discord_token"]
 

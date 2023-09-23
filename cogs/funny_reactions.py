@@ -25,7 +25,8 @@ class FunnyReactionsCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message) -> None:
-        # TODO: Do we need to loop through all the different buzzwords if they all have the same response?
+        # TODO: Do we need to loop through all the different buzzwords if they all have the same
+        # response?
         lowercase_content = message.content.lower()
         for word in FunnyReactionsCog.BUZZWORDS:
             if word in lowercase_content:

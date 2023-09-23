@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, Final
 
-import discord
 import yaml
 from discord.ext.commands.bot import Bot
 from discord.ext.commands.cog import Cog

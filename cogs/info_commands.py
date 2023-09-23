@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Final, List
 
-import discord
 import yaml
 from discord.ext import commands
 
@@ -13,8 +12,8 @@ Discord cog module that can be loaded through an extension.
 
 class InfoCommandsCog(commands.Cog):
     """
-    A Discord cog for managing information commands through CRUD operations. Users can use the information commands
-    to learn about a topic.
+    A Discord cog for managing information commands through CRUD operations. Users can use the
+    information commands to learn about a topic.
 
     Example:
 
