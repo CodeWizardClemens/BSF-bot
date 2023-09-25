@@ -4,7 +4,6 @@ import subprocess
 from pathlib import Path
 from typing import Any, Dict, Final
 
-import discord
 import yaml
 from discord.ext import commands, tasks
 
@@ -13,7 +12,8 @@ class CommitDataCog(commands.Cog):
     """
     Commits user data to the BSF-bot-data repository via Git.
 
-    It assumes that Git has already been setup on a host with access to the remote repository and that the setup won't change during runtime.
+    It assumes that Git has already been setup on a host with access to the remote repository and
+    that the setup won't change during runtime.
     """
 
     # Specifies the time to commit data through specified timezone, hour and minute values
@@ -55,12 +55,13 @@ class CommitDataCog(commands.Cog):
 
         commit_msg: str = f"(UTC: {current_date} {current_time}) Committing user data"
 
-        # Gets the current working directory of the subprocess/bot instance NOT the working directory of the root process
+        # Gets the current working directory of the subprocess/bot instance NOT the working
+        # directory of the root process
         working_dir = os.getcwd()
         try:
             # Changes the current directory to the data folder if possible
             os.chdir(self.DATA_PATH)
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             print(f"Git could not find the data folder {self.DATA_PATH}.")
 
         self.commit_to_git(commit_msg)
@@ -103,7 +104,8 @@ class CommitDataCog(commands.Cog):
             # TODO: Do we use logging instead?
             if e.returncode == 127:
                 print(
-                    "ERROR: Git isn't installed. Please install Git on the host or ensure the PATH variable has been set properly."
+                    "ERROR: Git isn't installed. Please install Git on the host or ensure the PATH"
+                    " variable has been set properly."
                 )
             else:
                 print(f"ERROR: Unknown. Return code: {e.returncode}")

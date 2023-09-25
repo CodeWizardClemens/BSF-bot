@@ -1,10 +1,14 @@
 import csv
 import os
 from datetime import date, datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, Final, List
 
 import discord
 import matplotlib.pyplot as plt
 import numpy as np
+import yaml
+from discord.ext import commands
 
 """
 Discord cog module that stores, reads and removes weight data.
@@ -69,19 +73,21 @@ class WeightCog(commands.Cog):
         Parameters:
             weight: (float): The weight value to be recorded.
             date: (str, optional): The date of the weight entry (default: current date).
-            user: (discord.Member, optional): The user for whom the weight is being recorded (default: yourself).
+            user: (discord.Member, optional): The user for whom the weight is being recorded
+                  (default: yourself).
         """
 
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
-                f"You don't have the bot-input role and are therefore not allowed to specify other users"
+                "You don't have the bot-input role and are therefore not allowed to specify other"
+                " users."
             )
             return
 
         try:
             weight: float = float(weight)
-        except:
-            await ctx.send(f"Not a valid weight.")
+        except ValueError:
+            await ctx.send("Not a valid weight.")
 
         user = user or ctx.author
         user_id: str = str(user.id)
@@ -129,21 +135,23 @@ class WeightCog(commands.Cog):
 
         Args:
             weight: (float) The weight value to be recorded.
-            user: (discord.Member, optional): The user for whom the weight is being recorded (default: yourself).
+            user: (discord.Member, optional): The user for whom the weight is being recorded
+                  (default: yourself).
             date: (str, optional) The date of the weight entry (default: current date).
 
         """
 
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
-                f"You don't have the bot-input role and are therefore not allowed to specify other users"
+                "You don't have the bot-input role and are therefore not allowed to specify other"
+                " users."
             )
             return
 
         try:
             weight = float(weight)
-        except:
-            await ctx.send(f"Not a valid weight.")
+        except ValueError:
+            await ctx.send("Not a valid weight.")
 
         user = user or ctx.author
         user_id = str(user.id)
@@ -191,7 +199,7 @@ class WeightCog(commands.Cog):
         try:
             days = WeightCog.MOVING_AVG_PERIODS[period]
             time_delta: timedelta = timedelta(days)
-        except:
+        except ValueError:
             raise ValueError(f"Invalid period: {period}.")
 
         start = today - time_delta
@@ -216,7 +224,7 @@ class WeightCog(commands.Cog):
             for row in csv_reader:
                 if row == WeightCog.HEADER_ROW:
                     continue
-                date: date = datetime.strptime(row[0], "%Y-%m-%d").date()
+                date: datetime = datetime.strptime(row[0], "%Y-%m-%d").date()
                 if self.date_inside_period(period, date):
                     weight = float(row[1])
                     user_weight_data_from_period.append((date, weight))
@@ -227,7 +235,8 @@ class WeightCog(commands.Cog):
         self, dates, weights, user, moving_averages=None, moving_avg_dates=None
     ) -> None:
         """
-        Creates a time series line plot of how weight increases over time with the option to create a moving average line.
+        Creates a time series line plot of how weight increases over time with the option to create
+        a moving average line.
 
         Args:
             dates (): The dates extracted from the weight entries.
@@ -236,7 +245,7 @@ class WeightCog(commands.Cog):
             moving_averages (| None): The moving averages for each weight data point.
             moving_avg_dates (| None): The moving average dates for each weight entry.
         """
-        has_moving_averages: bool = moving_averages != None and moving_avg_dates != None
+        has_moving_averages: bool = moving_averages is not None and moving_avg_dates is not None
 
         plt.figure(figsize=(10, 6))
         # Weight data
@@ -276,7 +285,8 @@ class WeightCog(commands.Cog):
 
         Args:
             user_weights_path (str): Path for a user's weight data
-            temp_user_weights_path (str): Temporary path for a user's weight data. We then use this to replace the original weight path
+            temp_user_weights_path (str): Temporary path for a user's weight data. We then use this
+                                          to replace the original weight path
             date (date): The date of the weight record to remove
 
         Returns the boolean result of whether the weight record was found and removed.
@@ -321,7 +331,8 @@ class WeightCog(commands.Cog):
         ),
     ):
         """
-        Displays a time series line graph showing the user's weight over time. It supports an optional moving average to calculate the moving average based on periods.
+        Displays a time series line graph showing the user's weight over time. It supports an
+        optional moving average to calculate the moving average based on periods.
 
         This requires Qt platform plugin "wayland".
 
@@ -342,12 +353,14 @@ class WeightCog(commands.Cog):
 
         Args:
             moving_average (str): Moving average period specified (or no_avg)
-            period (str): Period of data to display. This is used for displaying stats WITHOUT a moving average
+            period (str): Period of data to display. This is used for displaying stats WITHOUT a
+                          moving average.
         """
 
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
-                "You don't have the bot-input role and are therefore not allowed to specify other users"
+                "You don't have the bot-input role and are therefore not allowed to specify other"
+                " users."
             )
             return
 
@@ -443,8 +456,6 @@ class WeightCog(commands.Cog):
         plt.close()
 
         # Send the plot as an embedded image
-        with open(plot_path, "rb") as plot_file:
-            plot_data = plot_file.read()
         plot_embed = discord.Embed(title=f"Weight Record for {user.display_name}")
         plot_embed.set_image(url="attachment://plot.png")
         await ctx.send(file=discord.File(plot_path, "plot.png"))
@@ -456,7 +467,8 @@ class WeightCog(commands.Cog):
 
         Args:
             date: (str): The date of the weight entry to be removed.
-            user: (discord.Member, optional): The user for whom the weight entry should be removed (default: yourself).
+            user: (discord.Member, optional): The user for whom the weight entry should be removed
+                  (default: yourself).
 
         Usage:
         .remove_weight <date> [user]
@@ -466,7 +478,8 @@ class WeightCog(commands.Cog):
 
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
-                f"You don't have the bot-input role and are therefore nore allowed to specify other users"
+                "You don't have the bot-input role and are therefore nore allowed to specify other"
+                " users."
             )
             return
 
@@ -480,8 +493,8 @@ class WeightCog(commands.Cog):
             return
 
         removed = False
-        with open(file_path, "r") as input_file, open(
-            temp_file_path, "w", newline=""
+        with open(user_weights_path, "r") as input_file, open(
+            temp_user_weights_path, "w", newline=""
         ) as output_file:
             csv_reader = csv.reader(input_file)
             csv_writer = csv.writer(output_file)
@@ -496,7 +509,7 @@ class WeightCog(commands.Cog):
                 else:
                     csv_writer.writerow(row)
 
-        os.replace(temp_file_path, file_path)
+        os.replace(temp_user_weights_path, user_weights_path)
         if not removed:
             await ctx.send(f"No weight record found for the date {date}.")
         else:
@@ -508,7 +521,8 @@ class WeightCog(commands.Cog):
         Export weight data as a CSV file.
 
         Parameters:
-        - user (discord.Member, optional): The user for whom the weight data should be exported (default: yourself).
+        - user (discord.Member, optional): The user for whom the weight data should be exported
+               (default: yourself).
 
         Usage:
         .export [user]
@@ -518,7 +532,8 @@ class WeightCog(commands.Cog):
 
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
-                "You don't have the bot-input role and are therefore not allowed to specify other users"
+                "You don't have the bot-input role and are therefore not allowed to specify other"
+                " users."
             )
             return
 

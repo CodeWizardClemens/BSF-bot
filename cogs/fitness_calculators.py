@@ -1,6 +1,5 @@
 import re
 
-import discord
 from discord.ext import commands
 
 
@@ -96,7 +95,8 @@ class FitnessCalculators(commands.Cog):
                     tdee = 10 * weight + 6.25 * height - 5 * age
 
             # Create a response message with the extracted data and calculated statistics
-            # response = f"Height (cm): {height * 100}, Weight (kg): {weight}, Bodyfat (%): {bodyfat}, Gender: {gender}, Age: {age}, Activity: {activity}\n"
+            # response = f"Height (cm): {height * 100}, Weight (kg): {weight}, Bodyfat (%):"
+            #            " {bodyfat}, Gender: {gender}, Age: {age}, Activity: {activity}\n"
             response = ""
             if bmi is not None:
                 response += f"BMI: {bmi:.2f}\n"

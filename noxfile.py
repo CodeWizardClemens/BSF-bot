@@ -1,5 +1,3 @@
-import shlex
-
 import nox
 
 """
@@ -53,8 +51,9 @@ def checkers(session):
     session.install("isort")
     session.run("isort", "--check", "./")
 
-    # TODO, Turn checkers on.
-    # session.install("ruff")
-    # session.run("ruff", "./")
+    session.install("ruff")
+    session.run("ruff", "./")
+
+    # TODO, Turn pylint on, and add more checkers.
     # session.install("pylint")
     # session.run("pylint", "./**/*.py")

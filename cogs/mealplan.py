@@ -2,7 +2,6 @@
 
 from typing import Dict, Optional
 
-import discord
 from discord.ext import commands
 
 goal_dict: Dict[int, str] = {
@@ -218,8 +217,10 @@ class MealplanCog(commands.Cog):
             f"__**Body Stats**__\n"
             f"```"
             f"BMI: {calculate_bmi(self.bodyweight, self.height)}\n"
-            f"FFMI: {round(calculate_adjusted_ffmi(self.bodyweight, self.height, self.bodyfat),1)}\n"
-            f"Total fat mass (kg): {round(calculate_total_bodyfat(self.bodyweight, self.bodyfat))}\n"
+            "FFMI:"
+            f"{round(calculate_adjusted_ffmi(self.bodyweight, self.height, self.bodyfat),1)}\n"
+            "Total fat mass (kg):"
+            f"{round(calculate_total_bodyfat(self.bodyweight, self.bodyfat))}\n"
             f"Total lean mass (kg): {round(calculate_ffm(self.bodyweight, self.bodyfat))}\n"
             f"```"
             f"\n"
