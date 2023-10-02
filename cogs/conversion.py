@@ -10,9 +10,7 @@ class ConversionCog(commands.Cog):
     """
 
     # Compiled regular expressions as it may improve performance slightly
-    HEIGHT_PATTERN: re.Pattern = re.compile(
-        r"(\d+)\s?['’]\s?(\d+)\s?", re.IGNORECASE
-    )
+    HEIGHT_PATTERN: re.Pattern = re.compile(r"(\d+)\s?['’]\s?(\d+)\s?", re.IGNORECASE)
     WEIGHT_PATTERN: re.Pattern = re.compile(r"(\d+(?:\.\d+)?)\s?(?:lbs?|pounds?)", re.IGNORECASE)
 
     def __init__(self, bot: commands.Bot):
@@ -35,7 +33,9 @@ class ConversionCog(commands.Cog):
 
         # Converts the imperial units to metric units
         converted_heights = ConversionCog.HEIGHT_PATTERN.sub(self.convert_height_to_cm, content)
-        converted_weights = ConversionCog.WEIGHT_PATTERN.sub(self.convert_weight_to_kg, converted_heights)
+        converted_weights = ConversionCog.WEIGHT_PATTERN.sub(
+            self.convert_weight_to_kg, converted_heights
+        )
 
         # Send the converted message back to the channel
         if converted_weights != content:
@@ -49,12 +49,13 @@ class ConversionCog(commands.Cog):
             match (re.Match): The match found by the height regex
         """
 
-        feet : int = int(match.group(1))
-        inches : int = int(match.group(2))
-        if feet is None or match.group(2) is None: return
+        feet: int = int(match.group(1))
+        inches: int = int(match.group(2))
+        if feet is None or match.group(2) is None:
+            return
 
-        total_inches : int = feet * 12 + inches
-        cm : int = round(total_inches * 2.54)
+        total_inches: int = feet * 12 + inches
+        cm: int = round(total_inches * 2.54)
         return f"{cm} cm "
 
     def convert_weight_to_kg(self, match: re.Match) -> str:
@@ -65,10 +66,11 @@ class ConversionCog(commands.Cog):
             match (re.Match): The match found by the weight regex
         """
 
-        lbs : float = float(match.group(1))
-        if lbs is None: return
+        lbs: float = float(match.group(1))
+        if lbs is None:
+            return
 
-        kg : float = round(lbs * 0.45359237, 1)
+        kg: float = round(lbs * 0.45359237, 1)
         return f"{kg} kg"
 
 
