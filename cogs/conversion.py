@@ -3,6 +3,11 @@ import re
 import discord
 from discord.ext import commands
 
+"""
+Discord cog module for converting imperial units to metric.
+This can be loaded via an extension.
+"""
+
 
 class ConversionCog(commands.Cog):
     """
