@@ -11,7 +11,7 @@ class ConversionCog(commands.Cog):
 
     # Compiled regular expressions as it may improve performance slightly
     HEIGHT_PATTERN: re.Pattern = re.compile(
-        r"(\d+)\s?['’]\s?(\d+)\s?(?:\"|inches?)?", re.IGNORECASE
+        r"(\d+)\s?['’]\s?(\d+)\s?", re.IGNORECASE
     )
     WEIGHT_PATTERN: re.Pattern = re.compile(r"(\d+(?:\.\d+)?)\s?(?:lbs?|pounds?)", re.IGNORECASE)
 
