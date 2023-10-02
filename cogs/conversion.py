@@ -48,7 +48,8 @@ class ConversionCog(commands.Cog):
 
     def convert_height_to_cm(self, match: re.Match) -> str:
         """
-        Regex callback function that converts each height match into a centimeter value, returning the height converted string.
+        Regex callback function that converts each height match into a centimeter value.
+        This returns the height converted string.
 
         Args:
             match (re.Match): The match found by the height regex
@@ -65,7 +66,8 @@ class ConversionCog(commands.Cog):
 
     def convert_weight_to_kg(self, match: re.Match) -> str:
         """
-        Regex callback function that converts each `lb` match into a `kg` value, returning the weight converted string.
+        Regex callback function that converts each `lb` match into a `kg` value.
+        This returns the weight converted string.
 
         Args:
             match (re.Match): The match found by the weight regex
