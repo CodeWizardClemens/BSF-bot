@@ -14,9 +14,24 @@ class ConversionCog(commands.Cog):
     A Discord cog for converting height and weight values to metric units.
     """
 
-    # Compiled regular expressions as it may improve performance slightly
     HEIGHT_PATTERN: re.Pattern = re.compile(r"(\d+)\s?['’]\s?(\d+)\s?", re.IGNORECASE)
+    """
+    Regex to extract the height in feet and inches from a string.
+
+    For example:
+    
+    I am 23 inches -> 23
+    I am 3 feet 3 inches-> 3, 3
+    """
+
     WEIGHT_PATTERN: re.Pattern = re.compile(r"(\d+(?:\.\d+)?)\s?(?:lbs?|pounds?)", re.IGNORECASE)
+    """
+    Regex to extract the weight in pounds from a string.
+
+    For example:
+    I am a 184 pounds male -> 184
+    I am a 225lbs male -> 225
+    """
 
     def __init__(self, bot: commands.Bot):
         self.bot: commands.Bot = bot
@@ -34,16 +49,16 @@ class ConversionCog(commands.Cog):
         if message.author == self.bot.user:
             return
 
-        content: str = message.content
-
         # Converts the imperial units to metric units
-        converted_heights = ConversionCog.HEIGHT_PATTERN.sub(self.convert_height_to_cm, content)
+        converted_heights = ConversionCog.HEIGHT_PATTERN.sub(
+            self.convert_height_to_cm, message.content
+        )
         converted_weights = ConversionCog.WEIGHT_PATTERN.sub(
             self.convert_weight_to_kg, converted_heights
         )
 
-        # Send the converted message back to the channel
-        if converted_weights != content:
+        msg_has_converted = converted_weights != message.content
+        if msg_has_converted:
             await message.channel.send(f"```{converted_weights}```")
 
     def convert_height_to_cm(self, match: re.Match) -> str:
@@ -52,16 +67,18 @@ class ConversionCog(commands.Cog):
         This returns the height converted string.
 
         Args:
-            match (re.Match): The match found by the height regex
+            match (re.Match): The match found by the height regex.
+            This should contain a feet and inches value.
         """
 
-        feet: int = int(match.group(1))
-        inches: int = int(match.group(2))
-        if feet is None or match.group(2) is None:
-            return
+        assert match.group(1), "Expected the feet value to be not None"
+        assert match.group(2), "Expected the inches value to be not None"
 
-        total_inches: int = feet * 12 + inches
-        cm: int = round(total_inches * 2.54)
+        feet = int(match.group(1))
+        inches = int(match.group(2))
+
+        total_inches = feet * 12 + inches
+        cm = round(total_inches * 2.54)
         return f"{cm} cm "
 
     def convert_weight_to_kg(self, match: re.Match) -> str:
@@ -70,14 +87,16 @@ class ConversionCog(commands.Cog):
         This returns the weight converted string.
 
         Args:
-            match (re.Match): The match found by the weight regex
+            match (re.Match): The match found by the weight regex.
+            This should should contain a `lbs` value.
+
         """
 
-        lbs: float = float(match.group(1))
-        if lbs is None:
-            return
+        assert match.group(1), "Expected the lbs value to be not None"
 
-        kg: float = round(lbs * 0.45359237, 1)
+        lbs = float(match.group(1))
+
+        kg = round(lbs * 0.45359237, 1)
         return f"{kg} kg"
 
 
