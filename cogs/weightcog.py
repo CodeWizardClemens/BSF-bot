@@ -562,6 +562,24 @@ class WeightCog(commands.Cog):
 
     @commands.command()
     async def del_all_log(self, ctx: commands.Context, user: discord.Member = None) -> None:
+        """
+        Deletes all log data (CSV file) associated with a specified Discord user or the command invoker.
+
+        Parameters:
+            ctx (commands.Context): The context of the command.
+            user (discord.Member, optional): The Discord user for whom to delete the log data. Defaults to the command invoker.
+
+        Returns:
+            None: This function does not return any value.
+
+        Raises:
+            discord.ext.commands.MissingPermissions: If the command invoker lacks the necessary permissions.
+            discord.ext.commands.MissingRole: If the command invoker lacks the required bot-input role when specifying another user.
+
+        Example:
+            .del_all_log
+            .del_all_log user(Optional)
+        """
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
                 "You don't have the bot-input role and are therefore not allowed to specify other"
@@ -573,6 +591,7 @@ class WeightCog(commands.Cog):
         user_id = str(user.id)
         file_path = os.path.join(self.data_folder, f"{user_id}.csv")
 
+        # if the file/data for user does not exist
         if not os.path.exists(file_path):
             await ctx.send("No weight data found for this user.")
             return
