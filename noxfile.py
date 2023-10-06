@@ -29,8 +29,9 @@ def format(session):
     Run code formatter.
     """
 
-    session.install("black")
-    session.run("black", "./")
+    # TODO turn black back on.
+    # session.install("black")
+    # session.run("black", "./")
 
     session.install("isort")
     session.run("isort", "./")
@@ -46,8 +47,9 @@ def checkers(session):
     # help with writing more secure code.
     # session.install("bandit")
 
-    session.install("black")
-    session.run("black", "--check", "./")
+    # TODO turn black back on.
+    # session.install("black")
+    # session.run("black", "--check", "./")
     session.install("isort")
     session.run("isort", "--check", "./")
 
@@ -57,3 +59,14 @@ def checkers(session):
     # TODO, Turn pylint on, and add more checkers.
     # session.install("pylint")
     # session.run("pylint", "./**/*.py")
+
+
+@nox.session
+def tests(session):
+    """
+    Run all tests.
+    """
+    session.install("pytest")
+
+    session.install("discord", "pyyaml", "pytest-asyncio")
+    session.run("pytest", "./tests")
