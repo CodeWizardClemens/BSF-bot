@@ -5,8 +5,33 @@
 To authenticate the bot a `discord_token.yaml` file needs to be created with a Discord token:
 ```yaml
 # discord_token.yaml
-discord_token: 1234567
+discord_token: <your discord token>
 ```
+
+## Running the tests
+
+The tests are done via a tester slave, which talks to the bot and expects a certain responce back.
+
+Add the following line to  `discord_token.yaml` to authenticate the tester slave:
+
+```yaml
+# discord_token.yaml
+discord_token_test_slave: <your discord token>
+```
+
+After this add the following line to the `config_instance.yaml` file:
+
+```yaml
+# config_instance.yaml
+"test_channel": <channel id were you want to preform the tests>
+```
+
+Now you are able to run the tests with the following command:
+
+```
+nox --session tests
+```
+
 
 ## Nox environment
 
