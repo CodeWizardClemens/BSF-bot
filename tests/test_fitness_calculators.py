@@ -23,13 +23,11 @@ async def test_conversion_cog(tester_slave_environment: TesterSlaveEnvironment):
     Test the conversion cog.
     """
 
-    # FIXME the height conversions seem to be broken.
+    # FIXME The BMR calculator seems to be broken.
     test_values = [
-        ("I am 200 lbs", "I am 90.7 kg"),
-        ("I am 200lbs", "I am 90.7 kg"),
-        ("I am 200 pounds", "I am 90.7 kg"),
-        ("I am 0lbs", "I am 0.0 kg"),
-        ("I am -10lbs", "I am -4.5 kg"),
+        ("184cm 99kg", "BMI: 29.24"),
+        ("100kg 100cm", "BMI: 100.00"),
+        ("30bf 188cm 120kg", "BMI: 33.95\nFFMI: 23.80"),
     ]
 
     async def steps(self: TesterSlaveCog):
@@ -44,5 +42,5 @@ async def test_conversion_cog(tester_slave_environment: TesterSlaveEnvironment):
 
     for responce_index, test_value in enumerate(test_values):
         assert (
-            tester_slave_environment.responces[responce_index].content == f"```{test_value[1]}```"
+            tester_slave_environment.responces[responce_index].content == test_value[1]
         )
