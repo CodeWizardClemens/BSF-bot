@@ -56,7 +56,7 @@ class WeightCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.BOT = bot
         self.CONFIG: Final[Dict[str, Any]] = self.get_config()
-        self.data_folder: Final[str] = self.CONFIG["weight-cog-data-path"]
+        self.WEIGHT_COG_DATA_PATH: Final[str] = self.CONFIG["weight-cog-data-path"]
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -66,7 +66,7 @@ class WeightCog(commands.Cog):
 
     @commands.command()
     async def weight_goal(
-        self, ctx: commands.Context, weight: float, user: discord.Member, date: str = None
+            self, ctx: commands.Context, weight: float, user: discord.Member, date: str = None
     ) -> None:
         """
         Records a weight goal for a user.
@@ -129,7 +129,7 @@ class WeightCog(commands.Cog):
 
     @commands.command()
     async def weight(
-        self, ctx, weight: float, user: discord.Member = None, date: str = None
+            self, ctx, weight: float, user: discord.Member = None, date: str = None
     ) -> None:
         """
         Records a user's weight.
@@ -235,7 +235,7 @@ class WeightCog(commands.Cog):
         return user_weight_data_from_period
 
     def create_weight_plot(
-        self, dates, weights, user, moving_averages=None, moving_avg_dates=None
+            self, dates, weights, user, moving_averages=None, moving_avg_dates=None
     ) -> None:
         """
         Creates a time series line plot of how weight increases over time with the option to create
@@ -281,7 +281,7 @@ class WeightCog(commands.Cog):
 
     # TODO: Put this code into a WeightRepository
     def remove_weight_record(
-        self, user_weights_path: str, temp_user_weights_path: str, date: date
+            self, user_weights_path: str, temp_user_weights_path: str, date: date
     ) -> bool:
         """
         Removes the weight record for a user on a specific date
@@ -297,7 +297,7 @@ class WeightCog(commands.Cog):
 
         removed = False
         with open(user_weights_path, "r") as input_file, open(
-            temp_user_weights_path, "w", newline=""
+                temp_user_weights_path, "w", newline=""
         ) as output_file:
             csv_reader: csv.reader = csv.reader(input_file)
             csv_writer: csv.writer = csv.writer(output_file)
@@ -320,18 +320,18 @@ class WeightCog(commands.Cog):
 
     @commands.command()
     async def stats(
-        self,
-        ctx,
-        moving_average: str = commands.parameter(
-            default="no_avg", description="Options: weekly_avg, monthly_avg, yearly_avg, no_avg."
-        ),
-        period: str = commands.parameter(
-            default="last_month",
-            description="Which data to dosplay. Options: last_week, last_month, last_year, all",
-        ),
-        user: discord.Member = commands.parameter(
-            default=None, description="A mention to a discord user."
-        ),
+            self,
+            ctx,
+            moving_average: str = commands.parameter(
+                default="no_avg", description="Options: weekly_avg, monthly_avg, yearly_avg, no_avg."
+            ),
+            period: str = commands.parameter(
+                default="last_month",
+                description="Which data to dosplay. Options: last_week, last_month, last_year, all",
+            ),
+            user: discord.Member = commands.parameter(
+                default=None, description="A mention to a discord user."
+            ),
     ):
         """
         Displays a time series line graph showing the user's weight over time. It supports an
@@ -405,11 +405,11 @@ class WeightCog(commands.Cog):
 
             moving_averages = []
             for i in range(len(weights) - moving_avg_period + 1):
-                avg = np.mean(weights[i : i + moving_avg_period])
+                avg = np.mean(weights[i: i + moving_avg_period])
                 moving_averages.append(avg)
 
             # Adjust dates to match the moving average data length
-            moving_avg_dates = dates[moving_avg_period - 1 :]
+            moving_avg_dates = dates[moving_avg_period - 1:]
 
             # Create and save the plot with moving average
             plt.figure(figsize=(10, 6))
@@ -497,7 +497,7 @@ class WeightCog(commands.Cog):
 
         removed = False
         with open(user_weights_path, "r") as input_file, open(
-            temp_user_weights_path, "w", newline=""
+                temp_user_weights_path, "w", newline=""
         ) as output_file:
             csv_reader = csv.reader(input_file)
             csv_writer = csv.writer(output_file)
@@ -561,29 +561,22 @@ class WeightCog(commands.Cog):
             )
 
     @commands.command()
-    async def del_all_log(self, ctx: commands.Context, user: discord.Member = None) -> None:
+    async def delete_all_user_data(self, ctx: commands.Context, user: discord.Member = None) -> None:
         """
-        Deletes all log data (CSV file) associated with a specified Discord user or the command invoker.
+        Deletes all log data related to weight only (CSV file) associated with a
+        specified Discord user or the command invoker.
 
         Parameters:
             ctx (commands.Context): The context of the command.
             user (discord.Member, optional): The Discord user for whom to delete the log data. Defaults to the command invoker.
-
-        Returns:
-            None: This function does not return any value.
-
-        Raises:
-            discord.ext.commands.MissingPermissions: If the command invoker lacks the necessary permissions.
-            discord.ext.commands.MissingRole: If the command invoker lacks the required bot-input role when specifying another user.
-
         Example:
             .del_all_log
             .del_all_log user(Optional)
         """
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
-                "You don't have the bot-input role and are therefore not allowed to specify other"
-                " users."
+                "You don't have the bot-input role and are therefore not allowed to specify"
+                " other users."
             )
             return
 
@@ -596,9 +589,41 @@ class WeightCog(commands.Cog):
             await ctx.send("No weight data found for this user.")
             return
         else:
-            os.remove(file_path)
-            await ctx.send(f"All logs has been deleted.")
+            embed = discord.Embed(
+                title=f"Are you sure you want to remove all user weight data for @{user}",
+                timestamp=datetime.utcnow(),
+                colour=discord.Colour.blurple(),
+            )
+            embed.set_thumbnail(url=user.avatar)
+            msg = await ctx.send(embed=embed)
+            for emoji in ["✅", "❌"]:
+                await msg.add_reaction(emoji)
 
+            def option_check(
+                    reaction, user
+            ):  # a check function which takes the user's response
+                return user == ctx.author and reaction.emoji in ["✅", "❌"]
+
+            option, _ = await self.BOT.wait_for(
+                "reaction_add", check=option_check, timeout=30
+            )
+            if option.emoji == "✅":
+                os.remove(file_path)
+                embed = discord.Embed(
+                    title=f"All logs have been deleted",
+                    timestamp=datetime.utcnow(),
+                    colour=discord.Colour.blurple(),
+                )
+                await ctx.send(embed=embed)
+                return
+            else:
+                embed = discord.Embed(
+                    title=f"Operation Cancelled",
+                    timestamp=datetime.utcnow(),
+                    colour=discord.Colour.blurple(),
+                )
+                await ctx.send(embed=embed)
+                return
 
 async def setup(bot: commands.Bot):
     """Setup function to add the ConversionCog cog to the bot.
