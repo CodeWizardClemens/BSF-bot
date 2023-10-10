@@ -1,9 +1,11 @@
-import os
 import csv
+import os
 from datetime import date, datetime, timedelta
-import bot_utils as utils
 from pathlib import Path
-from typing import List, Final
+from typing import Final, List
+
+import bot_utils as utils
+
 
 class WeightRepository:
     """

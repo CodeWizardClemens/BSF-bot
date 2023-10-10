@@ -1,8 +1,9 @@
-import discord
-from discord.ext import commands
-from typing import Dict, Any, Final
-import yaml
 from pathlib import Path
+from typing import Any, Dict, Final
+
+import discord
+import yaml
+from discord.ext import commands
 
 CONFIG_PATH: Final[str] = Path("config.yaml")
 """

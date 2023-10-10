@@ -1,9 +1,11 @@
 import sys
+
 sys.path.append(("../../fitness_libs"))
 
 import os
 from pathlib import Path
 from typing import Final, List
+
 import bot_utils as utils
 
 
