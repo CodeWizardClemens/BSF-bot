@@ -10,8 +10,8 @@ import yaml
 from discord.ext import commands
 
 TOKEN: Final[str] = yaml.safe_load(Path("discord_token.yaml").open())["discord_token"]
-
 client = commands.Bot(command_prefix=".", intents=discord.Intents.all())
+client.help_command = commands.DefaultHelpCommand(show_parameter_descriptions=False)
 
 
 @client.command(brief="Load clog module")
