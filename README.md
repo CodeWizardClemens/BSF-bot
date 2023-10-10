@@ -7,7 +7,7 @@ This is a repository for the BSF-Bot which is a Discord "fitness" bot that can b
 - Info commands that can be used to retrieve information about a topic
 and many other features!
 
-The BSF-Bot is primarily used for the BSF Fitness Discord server.
+The BSF-Bot is used for the BSF Fitness Discord server.
 
 ## What is the BSF Fitness community?
 The BSF Fitness community is devoted to bringing positive change in your life and fitness goals. Including help with your overall health, nutrition, and athletic training.
