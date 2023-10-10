@@ -22,7 +22,7 @@ Discord link: https://discord.gg/bsf-fitness-688710650507165697
 
 https://bsffitness.weebly.com/
 
-
+test
 
 ## Setting up the bot
 
