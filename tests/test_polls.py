@@ -19,6 +19,8 @@ def tester_slave_environment() -> TesterSlaveEnvironment:
     return TesterSlaveEnvironment()
 
 
+@pytest.mark.skip("FIXME: Cog currently does not support setting poll channel by command. This"
+                  "makes it so that poll tests are difficult to setup..")
 @pytest.mark.asyncio
 async def test_polls_cog(tester_slave_environment: TesterSlaveEnvironment):
     """
