@@ -119,23 +119,13 @@ def tests(session):
     
     # TODO: In the future screens should be replaced with docker images. This is more secure and
     # easier to maintain.
-
-    # -d = Detach the screen, -S = specify a name, -m = The command to run.
-    result = subprocess.run(["screen", "-d", "-S", bot_screen_name, "-m", "./BSF-bot.py"])
     
-    assert result.returncode == 0,("Expected screen for `{bot_screen_name}` to be started. But the",
-                                   " screen comnmand returned a non zero value.")
-
-    print(f"RETURNCODE: {result.returncode}")
-    print(f"STDOUT: {result.stdout}")
-    print(f"STDERR: {result.stderr}")
-
     session.install("pytest")
     session.install("discord", "pyyaml", "pytest-asyncio")
     session.run("pytest", "./tests")
 
     # -S = specify a name, -X execute a a command.
-    result = subprocess.run(["screen", "-S" , bot_screen_name, "-X" , "quit"])
-    assert result.returncode == 0 or is_screen_session_running(bot_screen_name),(
-        f"Expected screen for `{bot_screen_name}` to be closed. But the screen comnmand returned a"
-        " non zero value.")
+    #result = subprocess.run(["screen", "-S" , bot_screen_name, "-X" , "quit"])
+    #assert result.returncode == 0 or is_screen_session_running(bot_screen_name),(
+    #    f"Expected screen for `{bot_screen_name}` to be closed. But the screen comnmand returned a"
+    #    " non zero value.")

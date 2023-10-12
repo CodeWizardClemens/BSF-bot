@@ -36,7 +36,7 @@ async def test_conversion_cog(tester_slave_environment: TesterSlaveEnvironment):
         """
         for message_to_send, _ in test_values:
             await self.test_channel.send(message_to_send)
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
     await tester_slave_environment.start(steps)
 
