@@ -1,3 +1,5 @@
+import subprocess
+
 import nox
 
 """
@@ -21,6 +23,46 @@ View the Nox help pages:
 
     nox --help
 """
+
+def is_screen_session_running(screen_name: str) -> bool:
+    """
+    Check if a screen with a specific name is running.
+
+    This can be checked by running the "screen -ls" command, which outputs all the current running
+    screens. This output is filered to see if #screen_name matches it.
+
+    Example output from screen -ls:
+
+    There are screens on:
+        882444.pts-2.hp (Attached)
+        881967.bot1     (Detached)
+        879711.bot2     (Detached)
+    3 Sockets in /run/screens/S-m.
+    """
+    # The screen command returns a non-zero exit code when no screens are running. This causes the
+    # subprocess to fail. If this happens the the expected error message should be "No Sockets
+    # found". In this case no screens are running and the function should return false.
+    try:
+        screen_output = subprocess.check_output(
+            ["screen", "-ls"], stderr=subprocess.STDOUT, text=True
+        )
+    except subprocess.CalledProcessError as screen_error:
+        if "No Sockets found" in screen_error.output:
+            return False  # No active screens found
+        raise RuntimeError(
+            "The 'screen' command was not able to get the current running screens"
+        )
+
+    # Split the output by line and iterate through screen names.
+    for line in screen_output.splitlines():
+        if line.startswith("\t"):
+            # Extract the screen name.
+            current_screen_name = line.strip().split(".")[1].split("\t")[0]
+            if current_screen_name == screen_name:
+                return True
+
+    # If no exact match is found, return False
+    return False
 
 
 @nox.session
@@ -63,10 +105,37 @@ def checkers(session):
 
 @nox.session
 def tests(session):
-    """
+    """`
     Run all tests.
-    """
-    session.install("pytest")
 
+    This command starts up the BSF bot and a tester slave so create a test environment.
+    """
+    bot_screen_name = "debug-BSF-bot-for-tests"
+    assert is_screen_session_running(bot_screen_name) is False, (
+        "Expected no other instance of {bot_screen_name} to be running when invoking the test"
+        " command. This error probably occored because an old testing session was not closed"
+        " properly."
+    )
+    
+    # TODO: In the future screens should be replaced with docker images. This is more secure and
+    # easier to maintain.
+
+    # -d = Detach the screen, -S = specify a name, -m = The command to run.
+    result = subprocess.run(["screen", "-d", "-S", bot_screen_name, "-m", "./BSF-bot.py"])
+    
+    assert result.returncode == 0,("Expected screen for `{bot_screen_name}` to be started. But the",
+                                   " screen comnmand returned a non zero value.")
+
+    print(f"RETURNCODE: {result.returncode}")
+    print(f"STDOUT: {result.stdout}")
+    print(f"STDERR: {result.stderr}")
+
+    session.install("pytest")
     session.install("discord", "pyyaml", "pytest-asyncio")
     session.run("pytest", "./tests")
+
+    # -S = specify a name, -X execute a a command.
+    result = subprocess.run(["screen", "-S" , bot_screen_name, "-X" , "quit"])
+    assert result.returncode == 0 or is_screen_session_running(bot_screen_name),(
+        f"Expected screen for `{bot_screen_name}` to be closed. But the screen comnmand returned a"
+        " non zero value.")
