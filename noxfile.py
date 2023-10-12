@@ -35,8 +35,8 @@ def is_screen_session_running(screen_name: str) -> bool:
 
     There are screens on:
         882444.pts-2.hp (Attached)
-        881967.nh       (Detached)
-        879711.bsf      (Detached)
+        881967.bot1     (Detached)
+        879711.bot2     (Detached)
     3 Sockets in /run/screens/S-m.
     """
     # The screen command returns a non-zero exit code when no screens are running. This causes the
@@ -110,7 +110,6 @@ def tests(session):
 
     This command starts up the BSF bot and a tester slave so create a test environment.
     """
-
     bot_screen_name = "debug-BSF-bot-for-tests"
     assert is_screen_session_running(bot_screen_name) is False, (
         "Expected no other instance of {bot_screen_name} to be running when invoking the test"
@@ -126,6 +125,10 @@ def tests(session):
     
     assert result.returncode == 0,("Expected screen for `{bot_screen_name}` to be started. But the",
                                    " screen comnmand returned a non zero value.")
+
+    print(f"RETURNCODE: {result.returncode}")
+    print(f"STDOUT: {result.stdout}")
+    print(f"STDERR: {result.stderr}")
 
     session.install("pytest")
     session.install("discord", "pyyaml", "pytest-asyncio")
