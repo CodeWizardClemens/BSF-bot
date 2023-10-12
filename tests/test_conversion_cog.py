@@ -33,7 +33,7 @@ async def test_conversion_cog(tester_slave_environment: TesterSlaveEnvironment):
         ("I am 0lbs", "I am 0.0 kg"),
         ("I am -10lbs", "I am -4.5 kg"),
         ("I am 200lbs and my cousin is 150lbs", "I am 90.7 kg and my cousin is 68.0 kg"),
-        ("I am 200lbs and I am 5'10", "I am 90.7 kg and I am 178 cm "),
+        ("OBVIOUSLY WRONG INPUT I am 200lbs and I am 5'10", "I am 90.7 kg and I am 178 cm "),
     ]
 
     async def steps(self: TesterSlaveCog):
