@@ -113,10 +113,6 @@ class InfoCommandsCog(commands.Cog):
         info_filename: str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         info_file_found: bool = os.path.isfile(info_filename)
         if info_file_found:
-            with open(info_filename, "r") as file:
-                content: str = file.read()
-            await ctx.send(f"Showing the command one last time\n {content}")
-
             os.remove(info_filename)
             await ctx.send(f"Command '{command}' removed.")
         else:

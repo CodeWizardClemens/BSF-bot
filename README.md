@@ -43,11 +43,12 @@ Add the following line to  `discord_token.yaml` to authenticate the tester slave
 discord_token_test_slave: <your discord token>
 ```
 
-After this add the following line to the `config_instance.yaml` file:
+After this add the following lines to the `config_instance.yaml` file:
 
 ```yaml
 # config_instance.yaml
 "test_channel": <channel id were you want to preform the tests>
+"debug": True
 ```
 
 Now you are able to run the tests with the following command:
