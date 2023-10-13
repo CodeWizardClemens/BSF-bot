@@ -19,6 +19,7 @@ def tester_slave_environment() -> TesterSlaveEnvironment:
     return TesterSlaveEnvironment()
 
 
+# @pytest.mark.skip("FIXME: Test doesn't work")
 @pytest.mark.asyncio
 async def test_conversion_cog(tester_slave_environment: TesterSlaveEnvironment):
     """
@@ -47,6 +48,6 @@ async def test_conversion_cog(tester_slave_environment: TesterSlaveEnvironment):
         await asyncio.sleep(2)
 
         await asyncio.sleep(1)
-        assert self.responces[3].content == "Command 'test_command_for_integration' removed."
+        assert self.responces[2].content == "Command 'test_command_for_integration' removed."
 
     await tester_slave_environment.start(steps)

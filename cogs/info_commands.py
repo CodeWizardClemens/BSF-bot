@@ -32,7 +32,9 @@ class InfoCommandsCog(commands.Cog):
         self.config: Dict[str, Any] = self.get_config()
         self.INFO_COMMANDS_PATH: Final[Path] = Path(self.config["info-commands-path"])
         # Creates the info commands directory
-        self.INFO_COMMANDS_PATH.touch()
+
+        if not self.INFO_COMMANDS_PATH.exists():
+            self.INFO_COMMANDS_PATH.mkdir(parents=True)
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:

@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 import nox
 
@@ -23,6 +24,16 @@ View the Nox help pages:
 
     nox --help
 """
+
+def bot_kill(c, bot_name: str) -> None:
+    """
+    Kill a bot's screen session if it exists.
+
+    :param bot_name: The name of the bot. This is also the name of the screen session.
+    """
+    if is_screen_session_running(bot_name):
+        # Specify (-S) the name of the bot to screen and execute (-X) a quit command.
+        c.run(f"screen -S {bot_name} -X quit")
 
 def is_screen_session_running(screen_name: str) -> bool:
     """
@@ -109,29 +120,24 @@ def tests(session):
     Run all tests.
 
     This command starts up the BSF bot and a tester slave so create a test environment.
+
     """
     bot_screen_name = "debug-BSF-bot-for-tests"
-    assert is_screen_session_running(bot_screen_name) is False, (
-        "Expected no other instance of {bot_screen_name} to be running when invoking the test"
-        " command. This error probably occored because an old testing session was not closed"
-        " properly."
-    )
+    if is_screen_session_running(bot_screen_name):
+        bot_kill(bot_screen_name)
     
-    # TODO: In the future screens should be replaced with docker images. This is more secure and
-    # easier to maintain.
-
     # -d = Detach the screen, -S = specify a name, -m = The command to run.
-    result = subprocess.run(["screen", "-d", "-S", bot_screen_name, "-m", "./BSF-bot.py"])
-    
-    assert result.returncode == 0,("Expected screen for `{bot_screen_name}` to be started. But the",
-                                   " screen comnmand returned a non zero value.")
+    process = subprocess.Popen(["screen", "-d", "-S", bot_screen_name, "-m", "./BSF-bot.py"])
+    process.wait()
 
-    print(f"RETURNCODE: {result.returncode}")
-    print(f"STDOUT: {result.stdout}")
-    print(f"STDERR: {result.stderr}")
+    # FIXME: Find some kind of mutex to make this work instead of a delay.
+    time.sleep(5)
+    assert process.returncode == 0, (f"Expected screen for `{bot_screen_name}` to be started. But"
+                                    "the screen comnmand returned a non zero value.")
 
     session.install("pytest")
     session.install("discord", "pyyaml", "pytest-asyncio")
+
     session.run("pytest", "./tests")
 
     # -S = specify a name, -X execute a a command.
