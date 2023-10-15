@@ -62,7 +62,7 @@ class WeightCog(commands.Cog):
     async def on_ready(self) -> None:
         """Outputs the module name when the bot is ready."""
 
-        print("Module: WeightCommands")
+        print(f"Module: {self.__class__.__name__}")
 
     @commands.command()
     async def weight_goal(
