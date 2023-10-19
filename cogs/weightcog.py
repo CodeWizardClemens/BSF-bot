@@ -58,6 +58,12 @@ class WeightCog(commands.Cog):
         self.CONFIG: Final[Dict[str, Any]] = self.get_config()
         self.WEIGHT_COG_DATA_PATH: Final[str] = self.CONFIG["weight-cog-data-path"]
 
+    @commands.Cog.listener()
+    async def on_ready(self) -> None:
+        """Outputs the module name when the bot is ready."""
+
+        print(f"Module: {self.__class__.__name__}")
+
     @commands.command()
     async def weight_goal(
         self, ctx: commands.Context, weight: float, user: discord.Member, date: str = None
@@ -141,7 +147,6 @@ class WeightCog(commands.Cog):
                   (default: current date).
 
         """
-
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
             await ctx.send(
                 "You don't have the bot-input role and are therefore not allowed to specify other"
@@ -153,7 +158,6 @@ class WeightCog(commands.Cog):
             weight = float(weight)
         except ValueError:
             await ctx.send("Not a valid weight.")
-
         user = user or ctx.author
         user_id = str(user.id)
         if not date:
@@ -183,7 +187,6 @@ class WeightCog(commands.Cog):
             csv_writer = csv.writer(csvfile)
             csv_writer.writerow(header_row)  # Write header row
             csv_writer.writerows(entries)
-
         await ctx.send(f"Weight recorded for {date} ({user.display_name}): {weight} kg.")
 
     def date_inside_period(self, period: str, date: date) -> bool:
@@ -556,6 +559,69 @@ class WeightCog(commands.Cog):
                 f"Weight data for {user.display_name}",
                 file=discord.File(csv_file, filename=f"{user.display_name}_weight_data.csv"),
             )
+
+    @commands.command()
+    async def delete_all_user_data(
+        self, ctx: commands.Context, user: discord.Member = None
+    ) -> None:
+        """
+        Deletes all log data related to weight only (CSV file) associated with a
+        specified Discord user or the command invoker.
+
+        Parameters:
+            ctx (commands.Context): The context of the command.
+            user (discord.Member, optional): The Discord user for whom to delete the log data. Defaults to the command invoker.
+        Example:
+            .del_all_log
+            .del_all_log user(Optional)
+        """
+        if user and (user != ctx.author) and not has_bot_input_perms(ctx):
+            await ctx.send(
+                "You don't have the bot-input role and are therefore not allowed to specify"
+                " other users."
+            )
+            return
+
+        user = user or ctx.author
+        user_id = str(user.id)
+        file_path = os.path.join(self.data_folder, f"{user_id}.csv")
+
+        # if the file/data for user does not exist
+        if not os.path.exists(file_path):
+            await ctx.send("No weight data found for this user.")
+            return
+        else:
+            embed = discord.Embed(
+                title=f"Are you sure you want to remove all user weight data for @{user}",
+                timestamp=datetime.utcnow(),
+                colour=discord.Colour.blurple(),
+            )
+            embed.set_thumbnail(url=user.avatar)
+            msg = await ctx.send(embed=embed)
+            for emoji in ["✅", "❌"]:
+                await msg.add_reaction(emoji)
+
+            def option_check(reaction, user):  # a check function which takes the user's response
+                return user == ctx.author and reaction.emoji in ["✅", "❌"]
+
+            option, _ = await self.BOT.wait_for("reaction_add", check=option_check, timeout=30)
+            if option.emoji == "✅":
+                os.remove(file_path)
+                embed = discord.Embed(
+                    title=f"All logs have been deleted",
+                    timestamp=datetime.utcnow(),
+                    colour=discord.Colour.blurple(),
+                )
+                await ctx.send(embed=embed)
+                return
+            else:
+                embed = discord.Embed(
+                    title=f"Operation Cancelled",
+                    timestamp=datetime.utcnow(),
+                    colour=discord.Colour.blurple(),
+                )
+                await ctx.send(embed=embed)
+                return
 
 
 async def setup(bot: commands.Bot):
