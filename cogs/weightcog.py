@@ -608,7 +608,7 @@ class WeightCog(commands.Cog):
             if option.emoji == "✅":
                 os.remove(file_path)
                 embed = discord.Embed(
-                    title="All logs have been deleted",
+
                     timestamp=datetime.utcnow(),
                     colour=discord.Colour.blurple(),
                 )
@@ -616,7 +616,7 @@ class WeightCog(commands.Cog):
                 return
             else:
                 embed = discord.Embed(
-                    title="Operation Cancelled",
+
                     timestamp=datetime.utcnow(),
                     colour=discord.Colour.blurple(),
                 )
