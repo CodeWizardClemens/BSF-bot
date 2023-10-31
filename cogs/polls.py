@@ -5,6 +5,7 @@ import yaml
 from discord.ext.commands.bot import Bot
 from discord.ext.commands.cog import Cog
 from discord.message import Message
+from models.config import Config
 
 """
 Module which contains a Cog for a bot to automatically create polls.
@@ -28,19 +29,10 @@ class PollsCog(Cog):
     Codes for thumbs up and down emojis.
     """
 
-    CONFIG_PATH: Final[str] = Path("./config.yaml")
-    """
-    The configuration file of the bot.
-    """
-
     def __init__(self, bot):
         self.BOT: Final[Bot] = bot
         """
         The bot object itself.
-        """
-        self.CONFIG: Final[dict] = self.get_config()
-        """
-        The configuration for the bot.
         """
 
     @Cog.listener()
@@ -56,7 +48,8 @@ class PollsCog(Cog):
         Listener that gets called when a discord message is send in any channel that the bot is
         present in.
         """
-        if message.channel.id == self.CONFIG["polls_channel_id"]:
+        data = await Config.get(guild_id=message.guild.id)
+        if message.channel.id == data.polls_channel_id:
             await PollsCog.create_poll(message)
 
     @classmethod
@@ -68,11 +61,6 @@ class PollsCog(Cog):
         """
         await message.add_reaction(PollsCog.THUMBS["thumbs_up"])
         await message.add_reaction(PollsCog.THUMBS["thumbs_down"])
-
-    def get_config(self) -> Dict[str, Any]:
-        """Get the bot config."""
-        with open(self.CONFIG_PATH, "r") as config_file:
-            return yaml.safe_load(config_file)
 
 
 async def setup(bot) -> None:
