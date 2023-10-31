@@ -32,7 +32,9 @@ class InfoCommandsCog(commands.Cog):
         self.config: Dict[str, Any] = self.get_config()
         self.INFO_COMMANDS_PATH: Final[Path] = Path(self.config["info-commands-path"])
         # Creates the info commands directory
-        self.INFO_COMMANDS_PATH.touch()
+
+        if not self.INFO_COMMANDS_PATH.exists():
+            self.INFO_COMMANDS_PATH.mkdir(parents=True)
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -113,10 +115,6 @@ class InfoCommandsCog(commands.Cog):
         info_filename: str = f"{self.INFO_COMMANDS_PATH}/{command.lower()}.txt"
         info_file_found: bool = os.path.isfile(info_filename)
         if info_file_found:
-            with open(info_filename, "r") as file:
-                content: str = file.read()
-            await ctx.send(f"Showing the command one last time\n {content}")
-
             os.remove(info_filename)
             await ctx.send(f"Command '{command}' removed.")
         else:

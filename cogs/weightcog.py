@@ -72,11 +72,11 @@ class WeightCog(commands.Cog):
         Records a weight goal for a user.
 
         Usage:
-        .weight <weight> <date> <user>
+          .weight <weight> <date> <user>
         Example:
-        .weight 75.5 2023-08-27 @user
+          .weight 75.5 2023-08-27 @user
 
-        Parameters:
+        Args:
             weight: (float): The weight value to be recorded.
             date: (str, optional): The date of the weight entry (default: current date).
             user: (discord.Member, optional): The user for whom the weight is being recorded
@@ -143,7 +143,8 @@ class WeightCog(commands.Cog):
             weight: (float) The weight value to be recorded.
             user: (discord.Member, optional): The user for whom the weight is being recorded
                   (default: yourself).
-            date: (str, optional) The date of the weight entry (default: current date).
+            date: (str, optional) The date of the weight entry
+                  (default: current date).
 
         """
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
@@ -191,8 +192,11 @@ class WeightCog(commands.Cog):
     def date_inside_period(self, period: str, date: date) -> bool:
         """
         Check if a date is inside of a period.
+        Args:
+            period (str): The period being referred to
+            date (str): The date that may or may not be inside a period
 
-        :returns: True if date is inside a period.
+        Returns True if date is inside a period.
         """
         today = datetime.now().date()
 
@@ -248,6 +252,7 @@ class WeightCog(commands.Cog):
             moving_averages (| None): The moving averages for each weight data point.
             moving_avg_dates (| None): The moving average dates for each weight entry.
         """
+
         has_moving_averages: bool = moving_averages is not None and moving_avg_dates is not None
 
         plt.figure(figsize=(10, 6))
@@ -315,23 +320,17 @@ class WeightCog(commands.Cog):
         """
         Gets the config file contents that contain the data folder path
         """
+
         with open(WeightCog.CONFIG_PATH, "r") as config_file:
             return yaml.safe_load(config_file)
 
     @commands.command()
     async def stats(
         self,
-        ctx,
-        moving_average: str = commands.parameter(
-            default="no_avg", description="Options: weekly_avg, monthly_avg, yearly_avg, no_avg."
-        ),
-        period: str = commands.parameter(
-            default="last_month",
-            description="Which data to dosplay. Options: last_week, last_month, last_year, all",
-        ),
-        user: discord.Member = commands.parameter(
-            default=None, description="A mention to a discord user."
-        ),
+        ctx: commands.Context,
+        moving_average: str = "no_avg",
+        period: str = "last_month",
+        user: discord.Member = None,
     ):
         """
         Displays a time series line graph showing the user's weight over time. It supports an
@@ -358,6 +357,7 @@ class WeightCog(commands.Cog):
             moving_average (str): Moving average period specified (or no_avg)
             period (str): Period of data to display. This is used for displaying stats WITHOUT a
                           moving average.
+            user (discord.Member): A mention to a Discord user
         """
 
         if user and (user != ctx.author) and not has_bot_input_perms(ctx):
@@ -523,9 +523,9 @@ class WeightCog(commands.Cog):
         """
         Export weight data as a CSV file.
 
-        Parameters:
-        - user (discord.Member, optional): The user for whom the weight data should be exported
-               (default: yourself).
+        Arguments:
+            user (discord.Member, optional): The user for whom the weight data should be exported.
+                 (default: yourself)
 
         Usage:
         .export [user]
@@ -608,7 +608,7 @@ class WeightCog(commands.Cog):
             if option.emoji == "✅":
                 os.remove(file_path)
                 embed = discord.Embed(
-                    title=f"All logs have been deleted",
+
                     timestamp=datetime.utcnow(),
                     colour=discord.Colour.blurple(),
                 )
@@ -616,7 +616,7 @@ class WeightCog(commands.Cog):
                 return
             else:
                 embed = discord.Embed(
-                    title=f"Operation Cancelled",
+
                     timestamp=datetime.utcnow(),
                     colour=discord.Colour.blurple(),
                 )
